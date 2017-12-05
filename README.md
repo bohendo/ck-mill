@@ -19,7 +19,8 @@
  - `isReadyToBreed(uint256)`: true if kittyID can breed
  - `canBreedWith(uint256,uint256)`: true if two kittyIDs can breed together
  - `ownerOf(uint256)`: returns address that owns some kittyID
- - `getKitty(uint256)`: returns all relevant info for some kittyID []
+ - `getKitty(uint256)`: returns [isPregnant [bool], isReady [bool], coolDownIndex [uint256], nextActionTime [uint256],
+      SiringWith [uint256], birthTime [uint256], matronID [uint256], sireID [uint256], generation [uint256], genes [uint256]]
 
 ### Methods/Transactions/Writes
  - `createSaleAuction(kittyID [uint256], startingPrice [uint256], endPrice [uint256], duration [uint256])`: Put kittyID up for sale
@@ -38,6 +39,8 @@
 # KittySales: [0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C](https://etherscan.io/address/0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C#code)
 
 ### Calls/Reads
+ - `getAuction(kittyID [uint256])`: returns [seller [address], startPrice [uint256], endPrice [uint256], duration [uint256], startTime [uint256]]
+
 ### Methods/Transactions/Writes
 ### Events
  - `AuctionCreated(kittyID [uint256], startPrice [uint256], endPrice [uint256], duration [uint256])`
