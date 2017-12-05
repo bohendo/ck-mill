@@ -1,10 +1,14 @@
 
-## Contract addresses
+## Cheat-sheet of methods available via object returned by [web3.eth.Contract()](http://web3js.readthedocs.io/en/1.0/web3-eth-contract.html)
+
+Note: Main contract is live at [0x06012c8cf97BEaD5deAe237070F9587f8E7A266d](https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#code)
+
+### Dependencies/External Calls
  - `saleAuction()`: address of sales-auction contract aka "0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C"
  - `siringAuction()`: address of siring-auction contract aka "0xC7af99Fe5513eB6710e6D5f44F9989dA40F27F26"
  - `geneScience()`: address of gene-science contract aka "0xf97e0A5b616dfFC913e72455Fde9eA8bBe946a2B"
 
-## Calls/Reads
+### Calls/Reads
  - `autoBirthFee()`: variable storing birth fee
  - `pregnantKitties()`: number of kitties currently pregnant
  - `totalSupply()`: total number of kittens created so far
@@ -17,7 +21,7 @@
  - `ownerOf(uint256)`: returns address that owns some kittyID
  - `getKitty(uint256)`: returns all relevant info for some kittyID
 
-## Methods/Transactions/Writes
+### Methods/Transactions/Writes
  - `createSaleAuction(kittyID [uint256], startingPrice [uint256], endPrice [uint256], duration [uint256])`: Put kittyID up for sale
  - `createSiringAuction(kittyID [uint256], startingPrice [uint256], endPrice [uint256], duration [uint256])`: Put kittyID up for sire
  - `breedWithAuto(kittyID [uint256], kittyID [uint256])`: Breed two kittyIDs that you own
@@ -25,11 +29,14 @@
  - `transfer(recipient [address], kittyID [uint256])`: give some recipient address one of the kittyIDs you own
  - `bidOnSiringAuction(sireID [uint256], matronID [uint256])`: ends some siring auction for sireID by bidding & breeding w our matronID
 
-## Events
+### Events emitted by core contract (0x06012c8...)
  - `Transfer(from [address], to [address], kittyID [uint256])`
  - `Approval(owner [address], approved [address], kittyID [uint256])`
  - `Birth(owner [address], kittyID [uint256], matronID [uint256], sireID [uint256], genes [uint256])`
  - `Pregnant(owner [address], matronID [uint256], sireID [uint256], cooldownEndBlock [uint256])`
+
+### Events emitted by sale (0xb1690C08E...) and sire contracts (0xC7af99Fe5...)
  - `AuctionCreated(kittyID [uint256], startPrice [uint256], endPrice [uint256], duration [uint256])`
  - `AuctionSuccessful(kittyID [uint256], price [uint256], winner [address])`
  - `AuctionCancelled(kittyID [uint256])`
+
