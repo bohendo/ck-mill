@@ -4,14 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "babel-node index.js"
+    "start": "babel-node index.js",
+    "build": "webpack --config webpack.config.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "babel-cli": "^6.26.0",
+    "babel-loader": "^7.1.2",
     "node-fetch": "^1.7.3",
     "pg": "^7.4.0",
-    "web3": "^1.0.0-beta.26"
+    "web3": "^1.0.0-beta.26",
+    "webpack": "^3.10.0"
   }
 }
