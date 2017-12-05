@@ -19,11 +19,11 @@ all: nodejs
 	@true
 
 deploy: nodejs
-	docker build -f Dockerfile -t `whoami`/ckmil_nodejs:$v .
-	docker push `whoami`/ckmil_nodejs:$v
+	docker build -f Dockerfile -t `whoami`/ckmill_nodejs:$v .
+	docker push `whoami`/ckmill_nodejs:$v
 
 nodejs: Dockerfile server.bundle.js
-	docker build -f Dockerfile -t `whoami`/ckmil_nodejs:latest -t ckmil_nodejs:latest .
+	docker build -f Dockerfile -t `whoami`/ckmill_nodejs:latest -t ckmill_nodejs:latest .
 	mkdir -p build && touch build/nodejs
 
 server.bundle.js: node_modules webpack.config.js $(js)

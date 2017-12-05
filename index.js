@@ -1,4 +1,6 @@
 
+console.log(`starting with env: ${JSON.stringify(process.env)}`)
+
 ////////////////////////////////////////
 // Magic Numbers
 const kittyCoreAddress = "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d"

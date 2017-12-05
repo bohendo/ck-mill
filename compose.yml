@@ -14,4 +14,7 @@ services:
         condition: any
     secrets:
       - geth
+    environment:
+      - ETH_PROVIDER
+      - ETH_ADDRESS
 
