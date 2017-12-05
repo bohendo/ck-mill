@@ -1,0 +1,17 @@
+version: '3.4'
+
+secrets:
+  geth:
+    external: true
+
+services:
+
+  node:
+    image: ckmill_nodejs:latest
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
+    secrets:
+      - geth
+
