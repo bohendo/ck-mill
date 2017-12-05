@@ -1,7 +1,7 @@
 
-## Cheat-sheet of methods available via object returned by [web3.eth.Contract()](http://web3js.readthedocs.io/en/1.0/web3-eth-contract.html)
+## Cryptokitties Smart-Contract Cheat-Sheet
 
-Note: Main contract is live at [0x06012c8cf97BEaD5deAe237070F9587f8E7A266d](https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#code)
+# KittyCore: [0x06012c8cf97BEaD5deAe237070F9587f8E7A266d](https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#code)
 
 ### Dependencies/External Calls
  - `saleAuction()`: address of sales-auction contract aka "0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C"
@@ -19,7 +19,7 @@ Note: Main contract is live at [0x06012c8cf97BEaD5deAe237070F9587f8E7A266d](http
  - `isReadyToBreed(uint256)`: true if kittyID can breed
  - `canBreedWith(uint256,uint256)`: true if two kittyIDs can breed together
  - `ownerOf(uint256)`: returns address that owns some kittyID
- - `getKitty(uint256)`: returns all relevant info for some kittyID
+ - `getKitty(uint256)`: returns all relevant info for some kittyID []
 
 ### Methods/Transactions/Writes
  - `createSaleAuction(kittyID [uint256], startingPrice [uint256], endPrice [uint256], duration [uint256])`: Put kittyID up for sale
@@ -29,13 +29,26 @@ Note: Main contract is live at [0x06012c8cf97BEaD5deAe237070F9587f8E7A266d](http
  - `transfer(recipient [address], kittyID [uint256])`: give some recipient address one of the kittyIDs you own
  - `bidOnSiringAuction(sireID [uint256], matronID [uint256])`: ends some siring auction for sireID by bidding & breeding w our matronID
 
-### Events emitted by core contract (0x06012c8...)
+### Events
  - `Transfer(from [address], to [address], kittyID [uint256])`
  - `Approval(owner [address], approved [address], kittyID [uint256])`
  - `Birth(owner [address], kittyID [uint256], matronID [uint256], sireID [uint256], genes [uint256])`
  - `Pregnant(owner [address], matronID [uint256], sireID [uint256], cooldownEndBlock [uint256])`
 
-### Events emitted by sale (0xb1690C08E...) and sire contracts (0xC7af99Fe5...)
+# KittySales: [0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C](https://etherscan.io/address/0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C#code)
+
+### Calls/Reads
+### Methods/Transactions/Writes
+### Events
+ - `AuctionCreated(kittyID [uint256], startPrice [uint256], endPrice [uint256], duration [uint256])`
+ - `AuctionSuccessful(kittyID [uint256], price [uint256], winner [address])`
+ - `AuctionCancelled(kittyID [uint256])`
+
+# KittySires: [0xC7af99Fe5513eB6710e6D5f44F9989dA40F27F26](https://etherscan.io/address/0xC7af99Fe5513eB6710e6D5f44F9989dA40F27F26#code)
+
+### Calls/Reads
+### Methods/Transactions/Writes
+### Events
  - `AuctionCreated(kittyID [uint256], startPrice [uint256], endPrice [uint256], duration [uint256])`
  - `AuctionSuccessful(kittyID [uint256], price [uint256], winner [address])`
  - `AuctionCancelled(kittyID [uint256])`
