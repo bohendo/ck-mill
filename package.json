@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "make && docker stack deploy -c compose.yml ckmill",
+    "start": "make && docker stack deploy -c docker/compose.yml ckmill && docker service logs -f ckmill_node",
     "build": "webpack --config webpack.config.js"
   },
   "author": "",

@@ -11,7 +11,7 @@ module.exports = {
   externals: ['electron', 'pg-native'],
 
   entry: {
-    server: './index.js',
+    server: './src/index.js',
   },
 
   output: {
