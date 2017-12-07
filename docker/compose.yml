@@ -3,10 +3,18 @@ version: '3.4'
 secrets:
   geth:
     external: true
+  postgres:
+    external: true
+
+volumes:
+  postgres:
+
+networks:
+  back:
 
 services:
 
-  node:
+  nodejs:
     image: ckmill_nodejs:latest
     deploy:
       mode: global
@@ -14,7 +22,36 @@ services:
         condition: any
     secrets:
       - geth
+      - postgres
     environment:
       - ETH_PROVIDER
       - ETH_ADDRESS
+      - PGHOST=postgres
+      - PGPORT=5432
+      - PGUSER=ckmill
+      - PGDATABASE=ckmill
+      - PGPASSFILE=/run/secrets/postgres
+    volumes:
+      - type: bind
+        source: ../build/server.bundle.js
+        target: /root/server.bundle.js
+    networks:
+      - back
+
+  postgres:
+    image: postgres:10
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
+    secrets:
+      - postgres
+    environment:
+      - POSTGRES_USER=ckmill
+      - POSTGRES_DB=ckmill
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - back
 

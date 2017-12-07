@@ -41,7 +41,6 @@
 ### Calls/Reads
  - `getAuction(kittyID [uint256])`: returns [seller [address], startPrice [uint256], endPrice [uint256], duration [uint256], startTime [uint256]]
 
-### Methods/Transactions/Writes
 ### Events
  - `AuctionCreated(kittyID [uint256], startPrice [uint256], endPrice [uint256], duration [uint256])`
  - `AuctionSuccessful(kittyID [uint256], price [uint256], winner [address])`
@@ -50,7 +49,8 @@
 # KittySires: [0xC7af99Fe5513eB6710e6D5f44F9989dA40F27F26](https://etherscan.io/address/0xC7af99Fe5513eB6710e6D5f44F9989dA40F27F26#code)
 
 ### Calls/Reads
-### Methods/Transactions/Writes
+ - `getAuction(kittyID [uint256])`: returns [seller [address], startPrice [uint256], endPrice [uint256], duration [uint256], startTime [uint256]]
+
 ### Events
  - `AuctionCreated(kittyID [uint256], startPrice [uint256], endPrice [uint256], duration [uint256])`
  - `AuctionSuccessful(kittyID [uint256], price [uint256], winner [address])`
