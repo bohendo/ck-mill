@@ -5,9 +5,21 @@ import { getKitty } from './getKitty'
 const fromBlock = 4655167 //4605167
 const toBlock = fromBlock + 10
 
-getKitty(5).then(k=>{
-  console.log(`Got kitty: ${JSON.stringify(k, null, 2)}`)
-})
+const syncAll = () => {
+  ck.core.methods.totalSupply().call().then(max => {
+
+    (function loop(i) {
+      if (i >= 100) return ('Done') // artificially limit while debugging
+      getKitty(i).then(k=>{
+        const msg = k.forsale ? `(On sale for ${Math.round(web3.utils.fromWei(k.currentprice, 'ether'), 3)})` : ''
+        console.log(`Got gen ${k.generation} kitty ${k.id} ${msg}`)
+        loop(i+1)
+      })
+    })(0)
+
+  }).catch(err => { console.error(err); process.exit(1) })
+}
+syncAll()
 
 
 /*
