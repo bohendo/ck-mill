@@ -8,6 +8,17 @@ sleep 2
 # Make sure the cwd is where it should be
 [ -f package.json ] || err 'Deploy from the project root'
 
+v=$(grep "\"version\"" ./package.json | egrep -o [0-9.]*)
+
+target="$1"
+if [ -z "$target" ]
+then
+  touch package.json && make deploy
+  cat docker/compose.yml | sed 's/$v/'"$v"'/' > /tmp/docker-compose-ckmill.yml
+  docker stack deploy -c /tmp/docker-compose-ckmill.yml ckmill
+  exit 0
+fi
+
 # Don't deploy if we're on master
 branch=`git rev-parse --abbrev-ref HEAD`
 if [[ ${branch:0:7} != 'release' ]]
@@ -22,22 +33,21 @@ then
 fi
 
 # Make sure we can ssh to the machine we're deploying to
-if ! ssh -q $1 exit 2> /dev/null
+if ! ssh -q $target exit 2> /dev/null
 then
-  err "Couldn't open an ssh connection to $1"
+  err "Couldn't open an ssh connection to $target"
 fi
 
 # Make sure project gets rebuilt as the production version
-touch src/index.js
+touch package.json
 make && make deploy
 
-v=$(grep "\"version\"" ./package.json | egrep -o [0-9.]*)
 
-cat docker/compose.yml | ssh $1 "cat - > ~/docker-compose-ckmill.yml"
+cat docker/compose.yml | sed 's/$v/'"$v"'/' | ssh $target "cat - > ~/docker-compose-ckmill.yml"
 
-ssh $1 docker pull bohendo/ckmill_nodejs:$v
+ssh $target docker pull bohendo/ckmill_nodejs:$v
 
-ssh $1 'bash -s' <<EOF
+ssh $target 'bash -s' <<EOF
 # check env vars
 export ETH_PROVIDER="$ETH_PROVIDER"
 export ETH_ADDRESS="$ETH_ADDRESS"
