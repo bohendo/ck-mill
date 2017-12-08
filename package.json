@@ -1,6 +1,6 @@
 {
   "name": "cryptokitties",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "logs": "docker service logs -f ckmill_nodejs"
   },
   "author": "",
-  "license": "ISC",
+  "license": "GPLv3",
   "dependencies": {
     "babel-cli": "^6.26.0",
     "babel-loader": "^7.1.2",
