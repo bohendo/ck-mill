@@ -17,7 +17,7 @@ const from = process.env.ETH_ADDRESS
 const fromBlock = 4605167
 
 ////////////////////////////////////////
-// Initialize global Variables/Instances
+// Initialize Web3 & Contract connections
 const web3 = new Web3(new Web3.providers.WebsocketProvider(provider))
 const ck = {
   core: new web3.eth.Contract(kittyCoreABI, kittyCoreAddress, {from}),

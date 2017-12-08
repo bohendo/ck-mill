@@ -4,7 +4,7 @@ MAINTAINER Bo Henderson <twitter.com/bohendo>
 
 RUN npm install -g nodemon
 
-COPY ./build/server.bundle.js /root/server.bundle.js
+COPY ./build/kittysync.bundle.js /root/kittysync.bundle.js
 
 ENTRYPOINT ["nodemon", "--exitcrash", "-w", \
-  "/root/server.bundle.js", "/root/server.bundle.js"]
+  "/root/kittysync.bundle.js", "/root/kittysync.bundle.js"]

@@ -14,14 +14,15 @@ networks:
 
 services:
 
-  nodejs:
-    image: ckmill_nodejs:latest
+  txsync:
+    image: ckmill_txsync:latest
     deploy:
       mode: global
       restart_policy:
         condition: any
+    depends_on:
+      - postgres
     secrets:
-      - geth
       - postgres
     environment:
       - ETH_PROVIDER
@@ -33,8 +34,33 @@ services:
       - PGPASSFILE=/run/secrets/postgres
     volumes:
       - type: bind
-        source: ../build/server.bundle.js
-        target: /root/server.bundle.js
+        source: ../build/txsync.bundle.js
+        target: /root/txsync.bundle.js
+    networks:
+      - back
+
+  kittysync:
+    image: ckmill_kittysync:latest
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
+    depends_on:
+      - postgres
+    secrets:
+      - postgres
+    environment:
+      - ETH_PROVIDER
+      - ETH_ADDRESS
+      - PGHOST=postgres
+      - PGPORT=5432
+      - PGUSER=ckmill
+      - PGDATABASE=ckmill
+      - PGPASSFILE=/run/secrets/postgres
+    volumes:
+      - type: bind
+        source: ../build/kittysync.bundle.js
+        target: /root/kittysync.bundle.js
     networks:
       - back
 

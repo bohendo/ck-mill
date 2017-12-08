@@ -11,7 +11,8 @@ module.exports = {
   externals: ['electron', 'pg-native'],
 
   entry: {
-    server: './src/index.js',
+    kittysync: './src/kittysync.js',
+    txsync: './src/txsync.js',
   },
 
   output: {
