@@ -3,23 +3,6 @@ import db from '../db/'
 
 const debug = false
 
-const saveKitty = k =>
-  db.query(`INSERT INTO kitties VALUES (
-    ${k.id}, ${k.isgestating}, ${k.isready},
-    to_timestamp(${k.birthtime}), to_timestamp(${k.nextactionat}),
-    ${k.cooldownindex}, ${k.siringwithid}, ${k.matronid},
-    ${k.sireid}, ${k.generation}, ${k.genes},
-    ${k.forsale}, ${k.forsire}, ${k.currentprice},
-    ${k.startprice}, ${k.endprice}, ${k.duration},
-    to_timestamp(${k.startedat}), to_timestamp(${k.lastsynced}) );`,
-  ).then((res) => {
-    // console.log(`Successfully saved kitty ${k.id}: ${res}`)
-    return 'Success'
-  }).catch((err) => {
-    // console.error(`Error saving kitty ${k.id}: ${err}`)
-    return 'Error'
-  })
-
 const fetchKitty = (id) => {
   // We'll use these to store data across several scopes below
   const k = { id }
@@ -106,16 +89,33 @@ const fetchKitty = (id) => {
   })
 }
 
-const getKitty = id =>
-  db.query(`SELECT * FROM kitties WHERE id = ${parseInt(id, 10)};`).then((res) => {
+const saveKitty = (k) => {
+  return db.query(`INSERT INTO kitties VALUES (
+    ${k.id}, ${k.isgestating}, ${k.isready},
+    to_timestamp(${k.birthtime}), to_timestamp(${k.nextactionat}),
+    ${k.cooldownindex}, ${k.siringwithid}, ${k.matronid},
+    ${k.sireid}, ${k.generation}, ${k.genes},
+    ${k.forsale}, ${k.forsire}, ${k.currentprice},
+    ${k.startprice}, ${k.endprice}, ${k.duration},
+    to_timestamp(${k.startedat}), to_timestamp(${k.lastsynced}) );`,
+  ).then((res) => {
+    // console.log(`Successfully saved kitty ${k.id}: ${res}`)
+    return 'Success'
+  }).catch((err) => {
+    // console.error(`Error saving kitty ${k.id}: ${err}`)
+    return 'Error'
+  })
+}
 
+const getKitty = (id) => {
+  return db.query(`SELECT * FROM kitties WHERE id = ${parseInt(id, 10)};`).then((res) => {
     if (res.rowCount !== 0) { return (res.rows[0]) }
 
     return fetchKitty(id).then((kitty) => {
       // console.log(`Saving kitty: ${JSON.stringify(kitty, null, 2)}`)
       return saveKitty(kitty).then(() => kitty)
     }).catch((err) => { console.error(`fetchKitty(${id}) Error: ${err}`); process.exit(1) })
-
   }).catch((err) => { console.error(`db.query(SELECT) Error: ${err}`); process.exit(1) })
+}
 
 export { getKitty }

@@ -9,17 +9,18 @@ const pool = new Pool({ password: fs.readFileSync('/run/secrets/postgres', 'utf8
 
 pool.on('error', (err, client) => {
   console.error('Unexpected error on idle client', err)
-  process.exit(-1)
+  process.exit(1)
 })
 
 // Initialize Sales Table
-pool.query(`CREATE TABLE IF NOT EXISTS sales(
-  txid        CHAR(64)    PRIMARY KEY,
+pool.query(`CREATE TABLE IF NOT EXISTS sales (
+  txid        CHAR(66)    PRIMARY KEY,
   block       INT         NOT NULL,
   kittyId     INT         NOT NULL,
   sale        BOOLEAN     NOT NULL,
   sire        BOOLEAN     NOT NULL,
   value       NUMERIC(24) NOT NULL,
+  buyer       CHAR(42)    NOT NULL,
   lastSynced  TIMESTAMP   NOT NULL
 );`).catch(err)
 
