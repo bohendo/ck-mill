@@ -25,6 +25,8 @@ all: blocksync kittysync
 deploy: blocksync kittysync
 	docker build -f docker/blocksync.Dockerfile -t `whoami`/ckmill_blocksync:$v -t ckmill_blocksync:$v .
 	docker build -f docker/kittysync.Dockerfile -t `whoami`/ckmill_kittysync:$v -t ckmill_kittysync:$v .
+	docker push `whoami`/ckmill_blocksync:$v
+	docker push `whoami`/ckmill_kittysync:$v
 
 blocksync: blocksync.Dockerfile blocksync.bundle.js
 	docker build -f docker/blocksync.Dockerfile -t `whoami`/ckmill_blocksync:latest -t ckmill_blocksync:latest .
