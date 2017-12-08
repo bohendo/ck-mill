@@ -25,4 +25,4 @@ const ck = {
   sire: new web3.eth.Contract(kittySireABI, kittySireAddress, {from}),
 }
 
-export { web3, ck }
+export default { web3, ck }

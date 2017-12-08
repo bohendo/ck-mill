@@ -12,7 +12,7 @@ module.exports = {
 
   entry: {
     kittysync: './src/kittysync.js',
-    txsync: './src/txsync.js',
+    blocksync: './src/blocksync.js',
   },
 
   output: {

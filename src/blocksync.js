@@ -1,22 +1,21 @@
 
 import { web3, ck } from './ethereum/'
-import db from './db/'
-import { getBlock } from './sync/getBlock'
+import { getBlock } from './sync/block'
 
-const fromBlock = 4605167
-const toBlock = fromBlock + 100
+// Magic number: block at which cryptokitties as deployed
+const fromBlock = 4605167 
 
 const syncAll = () => {
 
   web3.eth.getBlock('latest').then(latest => {
 
     (function blockLoop(n) {
-      if (n >= latest.blockNumber) return // artificially limit while debugging
+      if (n <= fromBlock) return
       getBlock(n).then(tx=>{
-        console.log(`Got tx ${JSON.stringify(tx)}`)
-        blockLoop(n+1)
+        console.log(`Got ${tx.length} transactions from block ${n}`)
+        blockLoop(n-1)
       }).catch(err => { console.error(err); process.exit(1) })
-    })(fromBlock)
+    })(parseInt(latest.number, 10))
 
   }).catch(err => { console.error(err); process.exit(1) })
 }

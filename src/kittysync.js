@@ -1,7 +1,7 @@
 
 import { web3, ck } from './ethereum/'
 import db from './db/'
-import { getKitty } from './sync/getKitty'
+import { getKitty } from './sync/kitty'
 
 const syncKitties = () => {
 

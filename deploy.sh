@@ -39,9 +39,7 @@ then
 fi
 
 # Make sure project gets rebuilt as the production version
-touch package.json
-make && make deploy
-
+touch package.json && make deploy
 
 cat docker/compose.yml | sed 's/$v/'"$v"'/' | ssh $target "cat - > ~/docker-compose-ckmill.yml"
 

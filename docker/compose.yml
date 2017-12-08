@@ -14,8 +14,8 @@ networks:
 
 services:
 
-  txsync:
-    image: ckmill_txsync:latest
+  blocksync:
+    image: ckmill_blocksync:latest
     deploy:
       mode: global
       restart_policy:
@@ -34,8 +34,8 @@ services:
       - PGPASSFILE=/run/secrets/postgres
     volumes:
       - type: bind
-        source: ../build/txsync.bundle.js
-        target: /root/txsync.bundle.js
+        source: ../build/blocksync.bundle.js
+        target: /root/blocksync.bundle.js
     networks:
       - back
 

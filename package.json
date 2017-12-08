@@ -8,7 +8,10 @@
     "start": "make && docker stack deploy -c docker/compose.yml ckmill",
     "reset": "docker stack rm ckmill && touch src/index.js && npm start",
     "build": "webpack --config webpack.config.js",
-    "logs": "docker service logs -f ckmill_nodejs"
+    "klog": "docker service logs -f --no-task-ids ckmill_kittysync",
+    "blog": "docker service logs -f --no-task-ids ckmill_blocksync",
+    "dlog": "docker service logs -f --no-task-ids ckmill_postgres",
+    "deploy": "bash deploy.sh"
   },
   "author": "",
   "license": "GPLv3",

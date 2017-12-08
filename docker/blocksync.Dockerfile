@@ -4,7 +4,7 @@ MAINTAINER Bo Henderson <twitter.com/bohendo>
 
 RUN npm install -g nodemon
 
-COPY ./build/txsync.bundle.js /root/txsync.bundle.js
+COPY ./build/blocksync.bundle.js /root/blocksync.bundle.js
 
 ENTRYPOINT ["nodemon", "--exitcrash", "-w", \
-  "/root/txsync.bundle.js", "/root/txsync.bundle.js"]
+  "/root/blocksync.bundle.js", "/root/blocksync.bundle.js"]
