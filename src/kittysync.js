@@ -1,6 +1,5 @@
-
 import { web3, ck } from './ethereum/'
-import db from './db/'
+import { have } from './db/'
 import { getKitty } from './sync/kitty'
 
 const syncKitties = () => {
@@ -8,12 +7,22 @@ const syncKitties = () => {
   ck.core.methods.totalSupply().call().then(max => {
 
     (function kittyLoop(i) {
-      if (i >= max) return
-      getKitty(i).then(k=>{
-        const msg = k.forsale ? `(On sale for ${Math.round(web3.utils.fromWei(k.currentprice, 'milli'), 3)} mETH)` : ''
-        console.log(`Got gen ${k.generation} kitty ${k.id} ${msg}`)
-        kittyLoop(i+1)
-      }).catch(err => { console.error(err); process.exit(1) })
+      if (i >= max) return 'Done'
+
+      have.kitty(i).then(has=>{
+        if (!has) {
+
+          getKitty(i).then(k=>{
+            console.log(`Got new kitty ${k.id}`)
+            kittyLoop(i+1)
+          }).catch(err => { console.error(err); process.exit(1) })
+
+        } else {
+          console.log(`Already have kitty ${i}`)
+          kittyLoop(i+1)
+        }
+
+      }).catch(console.error)
     })(0)
 
   }).catch(err => { console.error(err); process.exit(1) })

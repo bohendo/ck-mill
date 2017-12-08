@@ -1,5 +1,5 @@
-import { web3, ck } from '../ethereum/'
-import { write } from '../db/'
+import { ck } from '../ethereum/'
+import { read, write } from '../db/'
 
 const debug = false
 
@@ -27,9 +27,6 @@ const fetchKitty = (id) => {
         }
       }
     }
-    k.birthtime *= 1000
-    k.nextactionat *= 1000
-
 
     // SECOND layer: Get sale data or move on to sire data
     return ck.sale.methods.getAuction(id).call().then((s) => {
@@ -44,8 +41,8 @@ const fetchKitty = (id) => {
       k.startprice = sale.startingPrice
       k.endprice = sale.endingPrice
       k.duration = sale.duration
-      k.startedat = sale.startedAt * 1000
-      k.lastsynced = new Date().getTime()
+      k.startedat = sale.startedAt
+      k.lastsynced = new Date().getTime()/1000 // postgres expects seconds, not ms
       return (k)
 
     // Can't get sale data? Kitty must not be up for sale. Get sire data instead
@@ -63,8 +60,8 @@ const fetchKitty = (id) => {
         k.startprice = sale.startingPrice
         k.endprice = sale.endingPrice
         k.duration = sale.duration
-        k.startedat = sale.startedAt * 1000
-        k.lastsynced = new Date().getTime()
+        k.startedat = sale.startedAt
+        k.lastsynced = new Date().getTime()/1000 // postgres expects seconds, not ms
         return (k)
 
       // Can't get sire data? Kitty must not be up for sale OR sire
@@ -77,7 +74,7 @@ const fetchKitty = (id) => {
         k.endprice = null
         k.duration = null
         k.startedat = null
-        k.lastsynced = new Date().getTime()
+        k.lastsynced = new Date().getTime()/1000 // postgres expects seconds, not ms
         return (k)
       })
     })
@@ -90,14 +87,15 @@ const fetchKitty = (id) => {
 }
 
 const getKitty = (id) => {
-  return db.query(`SELECT * FROM kitties WHERE id = ${parseInt(id, 10)};`).then((res) => {
-    if (res.rowCount !== 0) { return (res.rows[0]) }
+  return read.kitty(id).then((res) => {
+    if (res) { return (res.rows[0]) }
 
     return fetchKitty(id).then((kitty) => {
       // console.log(`Saving kitty: ${JSON.stringify(kitty, null, 2)}`)
       return write.kitty(kitty).then(() => kitty)
     }).catch((err) => { console.error(`fetchKitty(${id}) Error: ${err}`); process.exit(1) })
-  }).catch((err) => { console.error(`db.query(SELECT) Error: ${err}`); process.exit(1) })
+
+  })
 }
 
-export default { getKitty }
+export { getKitty }

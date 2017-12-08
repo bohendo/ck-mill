@@ -1,5 +1,5 @@
-import { web3, ck } from '../ethereum/'
-import db from '../db/'
+import { ck } from '../ethereum/'
+import { read, write } from '../db/'
 
 const fetchBlock = (n) => {
   const all = []
@@ -38,14 +38,16 @@ const fetchBlock = (n) => {
 }
 
 const getBlock = (n) => {
-  return db.query(`SELECT * FROM sales WHERE block = ${n}`).then((res) => {
-    if (res.rowCount !== 0) { return (res.rows) }
+
+  return read.block(n).then((res) => {
+    if (res) { return (res.rows) }
     return fetchBlock(n).then((block) => {
-      return db.saveBlock(block).then(done => {
+      return write.block(block).then(done => {
         return (done)
       }).catch(err => { console.error(err); process.exit(1) })
     }).catch(err => { console.error(err); process.exit(1) })
-  }).catch(err => { console.error(err); process.exit(1) })
+
+  })
 }
 
-export default { getBlock }
+export { getBlock }

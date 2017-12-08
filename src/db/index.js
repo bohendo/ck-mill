@@ -1,11 +1,21 @@
 ////////////////////////////////////////
 // My Imports
-import { writeBlock } from './block'
-import { writeKitty } from './kitty'
+import { writeBlock, readBlock, haveBlock } from './block'
+import { writeKitty, readKitty, haveKitty } from './kitty'
 
-export default { 
-  write: {
-    kitty: writeKitty,
-    block: writeBlock,
-  }
+const have = {
+  kitty: haveKitty,
+  block: haveBlock,
 }
+
+const read = {
+  kitty: readKitty,
+  block: readBlock,
+}
+
+const write = {
+  kitty: writeKitty,
+  block: writeBlock,
+}
+
+export { read, write, have }

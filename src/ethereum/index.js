@@ -1,7 +1,7 @@
-
 ////////////////////////////////////////
 // 3rd Party Imports
 import Web3 from 'web3'
+
 // Etherscan Data
 import kittyCoreABI from '../../imports/kittyCore.json'
 import kittySaleABI from '../../imports/kittySale.json'
@@ -25,4 +25,4 @@ const ck = {
   sire: new web3.eth.Contract(kittySireABI, kittySireAddress, {from}),
 }
 
-export default { web3, ck }
+export { web3, ck }
