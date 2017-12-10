@@ -18,15 +18,16 @@ const syncKitties = () => {
             kittyLoop(i+1)
           }).catch(console.error)
         }
-      })(1)
+      })(0)
 
-    }).catch(err => { console.error(err); process.exit(1) })
-  }).catch(err => { console.error(`haveCache(${k}) Error: ${err}`); })
+    }).catch(console.error)
+  }).catch(console.error)
 }
 
 const saveKitty = (id) => {
   // q for query, we'll use this to accumulate data across several scopes below
   let q = `INSERT INTO kitties VALUES (${id}, `
+
   // FIRST indentation: Get kitty data or die trying
   return ck.core.methods.getKitty(id).call().then((kitty) => {
     q += `${kitty.isGestating}, `
@@ -47,15 +48,15 @@ const saveKitty = (id) => {
       q += `${sale.endingPrice}, `
       q += `${sale.duration}, `
       q += `to_timestamp(${sale.startedAt}), `
-      return ck.sale.methods.getCurrentPrice(id).call()
-
-    // If we get sale data, then finish this query & we're DONE!
-    }).then((price) => {
-      q += `${price}, `
-      q += `to_timestamp(${Math.round(new Date().getTime()/1000)}));`
-      return db.query(q)
+      return ck.sale.methods.getCurrentPrice(id).call().then((price) => {
+        q += `${price}, `
+        q += `to_timestamp(${Math.round(new Date().getTime()/1000)}));`
+        console.log(q)
+        return db.query(q).catch(console.error)
+      }).catch(console.error)
 
     }).catch(() => {
+
       // THIRD indentation: Get sire data or error & submit query w NULL for sale/sire data
       return ck.sire.methods.getAuction(id).call().then((sire) => {
         q += `false, true, ` // forSale, forSire
@@ -63,19 +64,19 @@ const saveKitty = (id) => {
         q += `${sire.endingPrice}, `
         q += `${sire.duration}, `
         q += `to_timestamp(${sire.startedAt}), `
-        return ck.sire.methods.getCurrentPrice(id).call()
-
-      // If we get sire data, then finish this query & we're DONE!
-      }).then((price) => {
-        q += `${price}, `
-        q += `to_timestamp(${Math.round(new Date().getTime()/1000)}));`
-        return db.query(q)
+        return ck.sire.methods.getCurrentPrice(id).call().then((price) => {
+          q += `${price}, `
+          q += `to_timestamp(${Math.round(new Date().getTime()/1000)}));`
+          console.log(q)
+          return db.query(q).catch(console.error)
+        }).catch(console.error)
 
       // Can't get sire data? Kitty must not be up for sale OR sire
       }).catch(() => {
         q += `false, false, ` // forSale, forSire
         q += `NULL, NULL, NULL, NULL, NULL, `
         q += `to_timestamp(${Math.round(new Date().getTime()/1000)}));`
+        console.log(q)
         return db.query(q)
       })
     })

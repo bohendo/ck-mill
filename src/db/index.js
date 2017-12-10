@@ -3,7 +3,7 @@
 import fs from 'fs'
 import { Pool } from 'pg'
 
-const err = (msg) => { console.error(`Error: ${msg}`); process.exit(1) }
+const err = (msg) => { console.error(msg); process.exit(1) }
 
 const pool = new Pool({ password: fs.readFileSync('/run/secrets/postgres', 'utf8')})
 
@@ -17,7 +17,7 @@ pool.query(`CREATE TABLE IF NOT EXISTS sales (
   txid        CHAR(66)    PRIMARY KEY,
   block       INT         NOT NULL,
   kittyId     INT         NOT NULL,
-  value       NUMERIC(24) NOT NULL,
+  value       NUMERIC(80) NOT NULL,
   buyer       CHAR(42)    NOT NULL,
   lastSynced  TIMESTAMP   NOT NULL
 );`).catch(err)
@@ -37,11 +37,11 @@ pool.query(`CREATE TABLE IF NOT EXISTS kitties (
   genes          NUMERIC(80)  NOT NULL,
   forSale        BOOLEAN      NOT NULL,
   forSire        BOOLEAN      NOT NULL,
-  startPrice     NUMERIC(24), 
-  endPrice       NUMERIC(24),
+  startPrice     NUMERIC(80),
+  endPrice       NUMERIC(80),
   duration       INT,
   startedAt      TIMESTAMP,
-  currentPrice   NUMERIC(24),
+  currentPrice   NUMERIC(80),
   lastSynced     TIMESTAMP    NOT NULL
 );`).catch(err)
 
