@@ -14,23 +14,23 @@ v=$(shell grep "\"version\"" ./package.json | egrep -o [0-9.]*)
 js=$(shell find ./src -type f -name "*.js*")
 
 # Output files
-bundles=blocksync.bundle.js kittysync.bundle.js
+bundles=salesync.bundle.js kittysync.bundle.js
 
 ##### RULES #####
 # first rule is the default
 
-all: blocksync kittysync
+all: salesync kittysync
 	@true
 
-deploy: blocksync kittysync
-	docker build -f docker/blocksync.Dockerfile -t `whoami`/ckmill_blocksync:$v -t ckmill_blocksync:$v .
+deploy: salesync kittysync
+	docker build -f docker/salesync.Dockerfile -t `whoami`/ckmill_salesync:$v -t ckmill_salesync:$v .
 	docker build -f docker/kittysync.Dockerfile -t `whoami`/ckmill_kittysync:$v -t ckmill_kittysync:$v .
-	docker push `whoami`/ckmill_blocksync:$v
+	docker push `whoami`/ckmill_salesync:$v
 	docker push `whoami`/ckmill_kittysync:$v
 
-blocksync: blocksync.Dockerfile blocksync.bundle.js
-	docker build -f docker/blocksync.Dockerfile -t `whoami`/ckmill_blocksync:latest -t ckmill_blocksync:latest .
-	mkdir -p build && touch build/blocksync
+salesync: salesync.Dockerfile salesync.bundle.js
+	docker build -f docker/salesync.Dockerfile -t `whoami`/ckmill_salesync:latest -t ckmill_salesync:latest .
+	mkdir -p build && touch build/salesync
 
 kittysync: kittysync.Dockerfile kittysync.bundle.js
 	docker build -f docker/kittysync.Dockerfile -t `whoami`/ckmill_kittysync:latest -t ckmill_kittysync:latest .

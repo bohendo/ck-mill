@@ -14,8 +14,8 @@ networks:
 
 services:
 
-  blocksync:
-    image: ckmill_blocksync:latest
+  salesync:
+    image: ckmill_salesync:latest
     deploy:
       mode: global
       restart_policy:
@@ -34,8 +34,8 @@ services:
       - PGPASSFILE=/run/secrets/postgres
     volumes:
       - type: bind
-        source: ../build/blocksync.bundle.js
-        target: /root/blocksync.bundle.js
+        source: ../build/salesync.bundle.js
+        target: /root/salesync.bundle.js
     networks:
       - back
 
