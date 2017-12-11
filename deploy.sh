@@ -43,7 +43,8 @@ touch package.json && make deploy
 
 cat docker/compose.yml | sed 's/$v/'"$v"'/' | ssh $target "cat - > ~/docker-compose-ckmill.yml"
 
-ssh $target docker pull bohendo/ckmill_nodejs:$v
+ssh $target docker pull bohendo/ckmill_kittysync:$v
+ssh $target docker pull bohendo/ckmill_salesync:$v
 
 ssh $target 'bash -s' <<EOF
 # check env vars
