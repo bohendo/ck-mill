@@ -1,6 +1,8 @@
 import { web3, ck } from './ethereum/'
 import db from './db/'
 
+const printQuery = false
+
 // Magic number: block at which cryptokitties was deployed
 const fromBlock = 4605167 
 
@@ -9,6 +11,7 @@ const syncAll = () => {
     const ids = blocks.rows.map(r=>r.block)
     return web3.eth.getBlock('latest').then(latest => {
       console.log(`Syncing sales starting with block ${latest.number}`);
+
       (function blockLoop(i) {
         if (i <= fromBlock) return 'done'
         if (ids.includes(i)) {
@@ -18,10 +21,23 @@ const syncAll = () => {
           saveSales(i).then(()=>{ blockLoop(i-1) }).catch(console.error)
         }
       })(parseInt(latest.number, 10))
+
+      // Save any new sales we detect
+      ck.sale.events.AuctionSuccessful({ fromblock: latest.number }, (err, res) => {
+        let q = `INSERT INTO sales VALUES (`
+        q += `'${res.transactionHash}', `
+        q += `${res.blockNumber}, `
+        q += `${res.returnValues.tokenId}, `
+        q += `${res.returnValues.totalPrice}, `
+        q += `'${res.returnValues.winner}', `
+        q += `to_timestamp(${Math.round(new Date().getTime()/1000)}) );`
+        if ( printQuery) { conosle.log(q) }
+        db.query(q).catch(console.error)
+      })
+
     }).catch(console.error)
   }).catch(console.error)
 }
-
 
 const saveSales = (i) => {
   return ck.sale.getPastEvents('AuctionSuccessful', { fromBlock: i, toBlock: i+1 }).then((sales) => {
@@ -38,8 +54,8 @@ const saveSales = (i) => {
         q += sq
       })
       q = q.slice(0,-2) + ';' // we're done, no more trailing commas needed
-      console.log(q)
-      return db.query(q).catch(()=>{/*almost certainly a duplicate key error, not worth logging*/})
+      if (printQuery) { console.log(q) }
+      return db.query(q).catch(console.error)
     }
   }).catch((err) => { console.error(err); process.exit(1) })
 }

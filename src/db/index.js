@@ -39,7 +39,7 @@ pool.query(`CREATE TABLE IF NOT EXISTS kitties (
   forSire        BOOLEAN      NOT NULL,
   startPrice     NUMERIC(80),
   endPrice       NUMERIC(80),
-  duration       INT,
+  duration       BIGINT,
   startedAt      TIMESTAMP,
   currentPrice   NUMERIC(80),
   lastSynced     TIMESTAMP    NOT NULL
