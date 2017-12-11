@@ -5,21 +5,22 @@ const syncKitties = () => {
 
   db.query(`SELECT id FROM kitties order by id;`).then(res=>{
     const ids = res.rows.map(r=>r.id)
+    const min = Math.max.apply(null, ids) // max id we've synced = min id we need to sync
     ck.core.methods.totalSupply().call().then(max => {
-
+      console.log(`Syncing kitties starting with kitty ${min}`);
       (function kittyLoop(i) {
         // Stop once we get to the last kitty
         if (i > max) { return 'Done' } // replace artificial cap w max
         // Skip any kitties we already downloaded
         if (ids.includes(i)) {
-          kittyLoop(i+1)
+          // give node a chance to clear the call stack otherwise it'll overflow
+          setTimeout(()=>{ kittyLoop(i+1) }, 0)
         } else {
           saveKitty(i).then(()=>{
             kittyLoop(i+1)
           }).catch(console.error)
         }
-      })(0)
-
+      })(min)
     }).catch(console.error)
   }).catch(console.error)
 }

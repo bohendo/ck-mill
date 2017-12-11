@@ -8,20 +8,18 @@ const syncAll = () => {
   return db.query(`SELECT DISTINCT block FROM sales order by block`).then(blocks => {
     const ids = blocks.rows.map(r=>r.block)
     return web3.eth.getBlock('latest').then(latest => {
-
+      console.log(`Syncing sales starting with block ${latest.number}`);
       (function blockLoop(i) {
         if (i <= fromBlock) return 'done'
         if (ids.includes(i)) {
-          blockLoop(i-1)
+          // gotta give node a chance to clear the call stack otherwise it'll overflow
+          setTimeout(()=>{ blockLoop(i-1) }, 0)
         } else {
           saveSales(i).then(()=>{ blockLoop(i-1) }).catch(console.error)
         }
       })(parseInt(latest.number, 10))
-      
-      console.log('Done!')
-
-    }).catch(err => { console.error(err); process.exit(1) })
-  }).catch(err => { console.error(err); process.exit(1) })
+    }).catch(console.error)
+  }).catch(console.error)
 }
 
 
@@ -40,6 +38,7 @@ const saveSales = (i) => {
         q += sq
       })
       q = q.slice(0,-2) + ';' // we're done, no more trailing commas needed
+      console.log(q)
       return db.query(q).catch(()=>{/*almost certainly a duplicate key error, not worth logging*/})
     }
   }).catch((err) => { console.error(err); process.exit(1) })
