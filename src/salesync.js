@@ -31,7 +31,7 @@ const syncAll = () => {
         q += `${res.returnValues.totalPrice}, `
         q += `'${res.returnValues.winner}', `
         q += `to_timestamp(${Math.round(new Date().getTime()/1000)}) );`
-        if ( printQuery) { conosle.log(q) }
+        if ( printQuery) { console.log(q) }
         db.query(q).catch(console.error)
       })
 
@@ -40,7 +40,7 @@ const syncAll = () => {
 }
 
 const saveSales = (i) => {
-  return ck.sale.getPastEvents('AuctionSuccessful', { fromBlock: i, toBlock: i+1 }).then((sales) => {
+  return ck.sale.getPastEvents('AuctionSuccessful', { fromBlock: i, toBlock: i }).then((sales) => {
     if (sales.length > 0) {
       let q = `INSERT INTO sales VALUES `
       sales.forEach((e) => {
