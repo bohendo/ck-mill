@@ -1,7 +1,7 @@
 import { web3, ck } from './ethereum/'
 import db from './db/'
 
-const printQuery = false
+const printQuery = true
 
 // Magic number: block at which cryptokitties was deployed
 const fromBlock = 4605167 
