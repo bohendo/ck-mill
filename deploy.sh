@@ -45,6 +45,7 @@ cat docker/compose.yml | sed 's/$v/'"$v"'/' | ssh $target "cat - > ~/docker-comp
 
 ssh $target docker pull bohendo/ckmill_kittysync:$v
 ssh $target docker pull bohendo/ckmill_salesync:$v
+ssh $target docker pull bohendo/ckmill_breeder:$v
 
 ssh $target 'bash -s' <<EOF
 # check env vars

@@ -13,6 +13,7 @@ module.exports = {
   entry: {
     kittysync: './src/kittysync.js',
     salesync: './src/salesync.js',
+    breeder: './src/breeder.js',
   },
 
   output: {
