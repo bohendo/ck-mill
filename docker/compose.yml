@@ -23,6 +23,7 @@ services:
     depends_on:
       - postgres
     secrets:
+      - geth
       - postgres
     environment:
       - ETH_PROVIDER
