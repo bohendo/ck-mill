@@ -10,6 +10,7 @@
     "build": "webpack --config webpack.config.js",
     "kittylogs": "docker service logs -f --no-task-ids ckmill_kittysync",
     "salelogs": "docker service logs -f --no-task-ids ckmill_salesync",
+    "breedlogs": "docker service logs -f --no-task-ids ckmill_breeder",
     "dblogs": "docker service logs -f --no-task-ids ckmill_postgres",
     "deploy": "bash deploy.sh"
   },

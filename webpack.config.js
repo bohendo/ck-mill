@@ -5,6 +5,7 @@ const webpack = require('webpack')
 module.exports = {
 
   target: 'node',
+  stats: { warnings: false },
 
   // some stupid web3 dependency requires electron but doesn't 
   // mention it in their package.json, this fixes 'module not found' error
