@@ -7,13 +7,24 @@ const syncKitties = () => {
   db.query(`SELECT id FROM kitties order by id;`).then(res=>{
     const ids = res.rows.map(r=>r.id)
     ck.core.methods.totalSupply().call().then(max => {
+      var now = new Date().getTime()/1000
+      var prev = 0
       (function kittyLoop(i) {
+        // Print something helpful
+        if (i % 100 === 0) {
+          let then = now
+          now = new Date().getTime()/1000
+          console.log(`Synced kitties ${prev}-${i} in ${now-then} seconds`)
+        }
         // Stop once we get to the last kitty
         if (i > max) { return 'Done' } // replace artificial cap w max
         // Skip any kitties we already downloaded
         if (ids.includes(i)) {
+          updateKitty(i).then(()=>{
+            kittyLoop(i+1)
+          }).catch(console.error)
           // give node a chance to clear the call stack otherwise it'll overflow
-          setTimeout(()=>{ kittyLoop(i+1) }, 0)
+          // setTimeout(()=>{ kittyLoop(i+1) }, 0)
         } else {
           saveKitty(i).then(()=>{
             kittyLoop(i+1)
@@ -23,6 +34,7 @@ const syncKitties = () => {
     }).catch(console.error)
   }).catch(console.error)
 }
+syncKitties()
 
 
 // Activate event listeners
@@ -168,4 +180,3 @@ const saveKitty = (id) => {
     process.exit(1)
   })
 }
-syncKitties()

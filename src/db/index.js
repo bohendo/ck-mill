@@ -20,7 +20,7 @@ pool.query(`CREATE TABLE IF NOT EXISTS sales (
   value       NUMERIC(80) NOT NULL,
   buyer       CHAR(42)    NOT NULL,
   lastSynced  TIMESTAMP   NOT NULL
-N);`).catch(err)
+);`).catch(err)
 
 // Initialize Kitties Table
 pool.query(`CREATE TABLE IF NOT EXISTS kitties (
@@ -50,9 +50,9 @@ pool.query(`CREATE TABLE IF NOT EXISTS txlog (
   txid        CHAR(66)    PRIMARY KEY,
   block       INT         NULL,
   value       NUMERIC(80) NOT NULL,
-  prebalance  Numeric(80) NOT NULL,
-  from        CHAR(42)    NOT NULL,
-  to          CHAR(42)    NOT NULL,
+  prebalance  NUMERIC(80) NOT NULL,
+  txFrom      CHAR(42)    NOT NULL,
+  txTo        CHAR(42)    NOT NULL,
   module      CHAR(10)    NOT NULL,
   error       CHAR(250)   NULL,
   lastSynced  TIMESTAMP   NOT NULL

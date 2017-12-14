@@ -14,32 +14,6 @@ networks:
 
 services:
 
-  breeder:
-    image: ckmill_breeder:latest
-    deploy:
-      mode: global
-      restart_policy:
-        condition: any
-    depends_on:
-      - postgres
-    secrets:
-      - geth
-      - postgres
-    environment:
-      - ETH_PROVIDER
-      - ETH_ADDRESS
-      - PGHOST=postgres
-      - PGPORT=5432
-      - PGUSER=ckmill
-      - PGDATABASE=ckmill
-      - PGPASSFILE=/run/secrets/postgres
-    volumes:
-      - type: bind
-        source: ../build/breeder.bundle.js
-        target: /root/breeder.bundle.js
-    networks:
-      - back
-
   salesync:
     image: ckmill_salesync:latest
     deploy:
@@ -62,6 +36,9 @@ services:
       - type: bind
         source: ../build/salesync.bundle.js
         target: /root/salesync.bundle.js
+      - type: bind
+        source: /tmp/ipc
+        target: /tmp/ipc
     networks:
       - back
 
@@ -87,6 +64,9 @@ services:
       - type: bind
         source: ../build/kittysync.bundle.js
         target: /root/kittysync.bundle.js
+      - type: bind
+        source: /tmp/ipc
+        target: /tmp/ipc
     networks:
       - back
 

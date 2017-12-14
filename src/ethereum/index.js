@@ -1,5 +1,6 @@
 ////////////////////////////////////////
 // 3rd Party Imports
+import net from 'net'
 import Web3 from 'web3'
 
 // Etherscan Data
@@ -13,7 +14,7 @@ const mn = {
   coreAddress: "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d",
   saleAddress: "0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C",
   sireAddress: "0xC7af99Fe5513eB6710e6D5f44F9989dA40F27F26",
-  provider: `ws://${process.env.ETH_PROVIDER}`,
+  provider: process.env.ETH_PROVIDER,
   from: process.env.ETH_ADDRESS,
   fromBlock: 4605167
 }
@@ -21,7 +22,8 @@ const mn = {
 ////////////////////////////////////////
 // Initialize Web3 & Contract connections
 
-const web3 = new Web3(new Web3.providers.WebsocketProvider(mn.provider))
+const ipc = new net.Socket()
+const web3 = new Web3(new Web3.providers.IpcProvider(mn.provider,ipc))
 
 // ck for cryptokitties
 const ck = {
