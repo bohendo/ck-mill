@@ -1,14 +1,13 @@
 import fs from 'fs'
 import { web3, ck, mn } from './ethereum/'
+import db from './db/'
 
 ////////////////////////////////////////
 // Magic Numbers
 const secret = fs.readFileSync('/run/secrets/geth', 'utf8')
 // bg for breeding groups, defines which groups of cats should be bred together
-const bgA = [228842, 117491] 
+const bgA = [228842, 117491]
 const bgB = [113881, 85736, 3954]
-
-
 
 const breeder = (bgA, bgB) => {
 
@@ -31,6 +30,8 @@ const breeder = (bgA, bgB) => {
 
 breeder(bgA, bgB)
 
+// g for global, we'll save data here that we want to persist between scopes
+const g = {}
 
 const breedGroup = (bg) => {
 
@@ -98,19 +99,44 @@ const breedGroup = (bg) => {
       return (false)
     }
 
-    console.log(`Breeding kitties ${areReady[0].id} and ${areReady[1].id}...`)
-    return ck.core.methods.autoBirthFee().call().then(fee=>{
-      console.log(`Breeding w fee ${fee}`)
+    // save the important bits to a var that will persist to the next scope
+    g.matron = areReady[0].id
+    g.sire = areReady[1].id
 
-      return web3.eth.personal.unlockAccount(mn.from, secret, 5).then(()=> {
-        console.log(`Account is unlocked & ready to go!`)
-        // return ck.core.methods.breedWithAuto(areReady[0].id, areReady[1].id).send({ from: mn.from, value: fee })
-      })
-    }).catch(console.error)
+    console.log(`Breeding kitties ${g.matron} and ${g.sire}...`)
+    return ck.core.methods.autoBirthFee().call()
 
-  }).then(receipt=>{
+  }).then(fee=>{
 
-    console.log(`Successful breeding: ${JSON.stringify(receipt, null, 2)}`)
+    g.fee = fee // save fee to global var
+    console.log(`Breeding w fee ${fee}`)
+    return web3.eth.getBalance(mn.from)
+
+  }).then(bal=>{
+
+    g.bal = bal // save bal to global var
+    return web3.eth.personal.unlockAccount(mn.from, secret, 5)
+
+  }).then(()=> {
+
+    console.log(`Account is unlocked & ready to go!`)
+    return ck.core.methods.breedWithAuto(g.matron, g.sire).send({ from: mn.from, value: g.fee }).then(receipt=>{
+      console.log(`Successful breeding: ${JSON.stringify(receipt, null, 2)}`)
+
+      db.query(`INSERT INTO txlog VALUES ('${
+        receipt.transactionHash }', ${ receipt.blockNumber
+      }, ${g.fee}, ${g.bal}, '${receipt.from}', '${
+        receipt.to}', 'breeder', NULL, to_timestamp(${
+      new Date.getTime()/1000}));`)
+
+    }).catch(error=>{
+      console.log(`Failed breeding: ${JSON.stringify(receipt, null, 2)}`)
+      db.query(`INSERT INTO txlog VALUES ('${
+        receipt.transactionHash }', NULL, ${
+        g.fee}, ${g.bal}, '${receipt.from}', '${
+        receipt.to}', 'breeder', to_timestamp(${
+      new Date.getTime()/1000}));`)
+    })
 
   }).catch(console.error)
 }
