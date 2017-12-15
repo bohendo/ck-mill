@@ -8,6 +8,7 @@ secrets:
 
 volumes:
   postgres:
+  ethprovider_ipc:
 
 networks:
   back:
@@ -25,20 +26,18 @@ services:
     secrets:
       - postgres
     environment:
-      - ETH_PROVIDER
       - ETH_ADDRESS
+      - ETH_PROVIDER=/tmp/ipc/geth.ipc
       - PGHOST=postgres
       - PGPORT=5432
       - PGUSER=ckmill
       - PGDATABASE=ckmill
       - PGPASSFILE=/run/secrets/postgres
     volumes:
+      - ethprovider_ipc:/tmp/ipc
       - type: bind
         source: ../build/salesync.bundle.js
         target: /root/salesync.bundle.js
-      - type: bind
-        source: /tmp/ipc
-        target: /tmp/ipc
     networks:
       - back
 
@@ -53,20 +52,18 @@ services:
     secrets:
       - postgres
     environment:
-      - ETH_PROVIDER
       - ETH_ADDRESS
+      - ETH_PROVIDER=/tmp/ipc/geth.ipc
       - PGHOST=postgres
       - PGPORT=5432
       - PGUSER=ckmill
       - PGDATABASE=ckmill
       - PGPASSFILE=/run/secrets/postgres
     volumes:
+      - ethprovider_ipc:/tmp/ipc
       - type: bind
         source: ../build/kittysync.bundle.js
         target: /root/kittysync.bundle.js
-      - type: bind
-        source: /tmp/ipc
-        target: /tmp/ipc
     networks:
       - back
 
