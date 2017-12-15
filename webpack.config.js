@@ -1,46 +1,31 @@
 
 const path = require('path')
-const webpack = require('webpack')
 
 module.exports = {
 
-  target: 'node',
-  stats: { warnings: false },
+  externals: ['web3', 'eth'],
 
-  // some stupid web3 dependency requires electron but doesn't 
-  // mention it in their package.json, this fixes 'module not found' error
-  externals: ['electron', 'pg-native'],
-
-  entry: {
-    kittysync: './src/kittysync.js',
-    salesync: './src/salesync.js',
-    breeder: './src/breeder.js',
-  },
+  entry: './src/ck/index.js',
 
   output: {
     path: path.join(__dirname, 'build'),
-    filename: '[name].bundle.js',
+    filename: 'ck.bundle.js',
+    library: 'ck',
+    libraryTarget: 'assign',
   },
 
   resolve: {
     extensions: ['.js', '.json'],
-
-    // scrypt.js says "if target is node, use c++ implementation, otherwise use js"
-    // but I don't want any c++, let's force the js version to always be loaded.
-    alias: { 'scrypt.js': 'scryptsy' },
   },
 
   module: {
     rules: [
       {
-        test: /\.jsx?$/,
-        use: ['babel-loader'],
-        exclude: /node_modules/,
-      },
-      {
-        test: /\.html$/,
-        use: ['html-loader'],
-        exclude: /node_modules/,
+        test: /\.js$/,
+        use: {
+          loader: 'babel-loader',
+          options: { presets: ['es2015'], },
+        },
       },
     ],
   },
