@@ -31,7 +31,7 @@ console: console.Dockerfile ck.bundle.js
 	mkdir -p build && touch build/console
 
 $(bundles): node_modules webpack.config.js $(js)
-	$(webpack) --config webpack.config.js
+	$(webpack) --config ops/webpack.config.js
 
 node_modules: package.json package-lock.json
 	npm install
