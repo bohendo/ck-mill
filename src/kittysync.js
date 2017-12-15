@@ -1,8 +1,6 @@
-import { web3, ck } from './ethereum/'
-import db from './db/'
 
 console.log(JSON.stringify(process.env, null, 2))
-web3.eth.getBlock('latest', console.log)
+eth.getBlock('latest', console.log)
 
 const printQuery = true
 
