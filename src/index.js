@@ -1,10 +1,11 @@
 import { core, sale, sire } from './ck/'
 
-const myKitties = [291628, 282323, 279505, 258963, 228842, 117491, 113881, 85736, 25856, 25493, 24111, 3954]
 const fromBlock = 4605167
-const bg = {
-  A: [228842, 117491],
-  B: [113881, 85736, 3954],
+const ls = {
+  gen0: [25493],
+  gen1A: [228842, 117491],
+  gen1B: [113881, 85736, 3954],
+  gen2: [335778, 282323, 279505, 258963]
 }
 
 const breedGroup = (lok) => {
@@ -152,4 +153,4 @@ const getKitty = (id) => {
   return kitty
 }
 
- export { core, sale, sire, fromBlock, getKitty, getMyKitties, myKitties, sellKitty, status, bg, breedGroup }
+ export { core, sale, sire, fromBlock, getKitty, getMyKitties, sellKitty, status, ls, breedGroup }
