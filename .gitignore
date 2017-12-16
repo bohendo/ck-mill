@@ -2,3 +2,4 @@ node_modules
 *.secret
 build
 data
+archive

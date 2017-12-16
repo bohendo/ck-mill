@@ -1,11 +1,13 @@
 import { core, sale, sire } from './ck/'
 
 const fromBlock = 4605167
-const ls = {
+const bg = {
   gen0: [25493],
   gen1A: [228842, 117491],
   gen1B: [113881, 85736, 3954],
-  gen2: [335778, 282323, 279505, 258963]
+  gen2A: [335778, 282323],
+  gen2B: [279505],
+  gen2C: [258963],
 }
 
 const breedGroup = (lok) => {
@@ -24,6 +26,9 @@ const breedGroup = (lok) => {
         return(`Error: kitty ${lok[i]} and kitty ${lok[j]} can't breed`)
       }
     }
+  }
+  if (ready.length < 2) {
+    return (`Error: not enough kitties are ready`)
   }
 
   const kitties = []
@@ -153,4 +158,4 @@ const getKitty = (id) => {
   return kitty
 }
 
- export { core, sale, sire, fromBlock, getKitty, getMyKitties, sellKitty, status, ls, breedGroup }
+ export { core, sale, sire, fromBlock, getKitty, getMyKitties, sellKitty, status, bg, breedGroup }

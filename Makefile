@@ -30,8 +30,8 @@ console: console.Dockerfile ck.bundle.js
 	docker build -f ops/console.Dockerfile -t `whoami`/ckmill_console:$v -t ckmill_console:$v .
 	mkdir -p build && touch build/console
 
-$(bundles): node_modules webpack.config.js $(js)
-	$(webpack) --config ops/webpack.config.js
+$(bundles): node_modules webpack.console.js $(js)
+	$(webpack) --config ops/webpack.console.js
 
 node_modules: package.json package-lock.json
 	npm install
