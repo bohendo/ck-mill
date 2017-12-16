@@ -1,5 +1,9 @@
 import { core, sale, sire } from './ck/'
 
+const myGen0 = [25493]
+const myGen1 = [228842, 117491, 113881, 85736, 3954]
+const myKitties = [291628, 282323, 279505, 258963, 228842, 117491, 113881, 85736, 25856, 25493, 24111, 3954]
+
 const fromBlock = 4605167
 
 const getMyKitties = (addr) => {
@@ -70,4 +74,4 @@ const getKitty = (id) => {
   return kitty
 }
 
-export { core, sale, sire, fromBlock, getKitty, getMyKitties }
+export { core, sale, sire, fromBlock, getKitty, getMyKitties, myKitties }
