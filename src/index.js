@@ -33,6 +33,7 @@ const getKitty = (id) => {
     sireId: out[7],
     generation: out[8],
     genes: out[9],
+    owner: core.ownerOf.call(id)
   }
 
   out = sale.getAuction.call(id)
