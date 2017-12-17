@@ -17,43 +17,56 @@ const syncAuctionCreated = (from) => {
 // Define event listeners
 const syncAuctionSuccessful = (from) => {
 
-  db.query(`CREATE TABLE IF NOT EXISTS saleAuctionSuccessful (
-    txhash     CHAR(66)    PRIMARY KEY,
-    blockn     BIGINT      NOT NULL,
-    kittyid    BIGINT      NOT NULL,
-    price      NUMERIC(78) NOT NULL,
-    winner     CHAR(42)    NOT NULL);`)
+  // sors for Sale or Sire, equals either 'sale' or 'sire'
+  const dbinit = (sors) => {
+    db.query(`CREATE TABLE IF NOT EXISTS ${sors}AuctionSuccessful (
+      txhash     CHAR(66)    PRIMARY KEY,
+      blockn     BIGINT      NOT NULL,
+      kittyid    BIGINT      NOT NULL,
+      price      NUMERIC(78) NOT NULL,
+      winner     CHAR(42)    NOT NULL);`)
+  }
+  dbinit('sale')
+  dbinit('sire')
 
-  const saveAuctionSuccessful = (event) => {
-    let q = `INSERT INTO saleAuctionSuccessful VALUES (
+  const saveAuctionSuccessful = (event, sors) => {
+    let q = `INSERT INTO ${sors}AuctionSuccessful VALUES (
       '${event.transactionHash}',
        ${event.blockNumber},
        ${event.returnValues[0]},
        ${event.returnValues[1]},
       '${event.returnValues[2]}');`
     if (printq) { console.log(q) }
-    db.query(q).catch(console.error)
+    db.query(q).catch(error=>{
+      if (error.code !== 23505) console.error(error)
+      else console.error('dup')
+    })
   }
 
-  // get current/future events
-  ck.sale.events.AuctionSuccessful({ fromBlock: from }, (err, res) => {
-    if (err) { console.error(err); process.exit(1) }
-    saveAuctionSuccessful(res)
-  })
+  const getAuctionSuccessful = (sors) => {
+    // get current/future events
+    ck[sors].events.AuctionSuccessful({ fromBlock: from }, (err, res) => {
+      if (err) { console.error(err); process.exit(1) }
+      saveAuctionSuccessful(res, sors)
+    })
+  }
+  getAuctionSuccessful('sale')
+  getAuctionSuccessful('sire')
 
-  // get past events
-  const pastEventLoop = (i) => {
+  // get past events | sors for Sale OR Sire
+  const pastEventLoop = (i, sors) => {
     if (i < mn.fromBlock) return ('done')
-    ck.sale.getPastEvents('AuctionSuccessful', { fromBlock: i, toBlock: i }, (err, res) => {
+    ck[sors].getPastEvents('AuctionSuccessful', { fromBlock: i, toBlock: i }, (err, res) => {
       if (err) { console.error(err); process.exit(1) }
       res.forEach(event=>{
-        saveAuctionSuccessful(event)
+        saveAuctionSuccessful(event, sors)
       })
     })
     // Move on to the next
-    pastEventLoop(i-1)
+    pastEventLoop(i-1, sors)
   }
-  pastEventLoop(from)
+  pastEventLoop(from, 'sale')
+  pastEventLoop(from, 'sire')
 }
 
 // Activate!
