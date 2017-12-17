@@ -4,7 +4,7 @@ const path = require('path')
 module.exports = {
 
   target: 'node',
-  externals: ['web3', 'eth'],
+  externals: ['pg-native', 'electron'],
 
   entry: './src/sync.js',
 
@@ -15,6 +15,9 @@ module.exports = {
 
   resolve: {
     extensions: ['.js', '.json'],
+    // scrypt.js says "if target is node, use c++ implementation"
+    // but I don't want any c++, let's force the js version to load
+    alias: { 'scrypt.js': 'scryptsy' },
   },
 
   module: {
@@ -25,7 +28,7 @@ module.exports = {
           loader: 'babel-loader',
           options: { presets: ['es2015'], },
         },
-        exclude: ['node_modules']
+        exclude: /node_modules/,
       },
     ],
   },
