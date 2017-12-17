@@ -32,14 +32,11 @@ const syncAuctionSuccessful = (from) => {
   const saveAuctionSuccessful = (event, sors) => {
     let q = `INSERT INTO ${sors}AuctionSuccessful VALUES (
       '${event.transactionHash}',
-       ${event.blockNumber},
-       ${event.returnValues[0]},
-       ${event.returnValues[1]},
+       ${event.blockNumber}, ${event.returnValues[0]}, ${event.returnValues[1]},
       '${event.returnValues[2]}');`
     if (printq) { console.log(q) }
     db.query(q).catch(error=>{
-      if (error.code !== 23505) console.error(error)
-      else console.error('dup')
+      if (error.code !== '23505') { console.error(error) }
     })
   }
 
