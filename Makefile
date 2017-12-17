@@ -15,23 +15,31 @@ v=latest
 js=$(shell find ./src -type f -name "*.js")
 
 # Output files
-bundles=ck.bundle.js
+bundles=ck.bundle.js sync.bundle.js
 
 ##### RULES #####
 # first rule is the default
 
-all: console
+all: console sync
 	@true
 
-deploy: console
+deploy: console sync
 	docker push `whoami`/ckmill_console:$v
+	docker push `whoami`/ckmill_sync:$v
 
 console: console.Dockerfile ck.bundle.js
 	docker build -f ops/console.Dockerfile -t `whoami`/ckmill_console:$v -t ckmill_console:$v .
 	mkdir -p build && touch build/console
 
-$(bundles): node_modules webpack.console.js $(js)
+sync: sync.Dockerfile sync.bundle.js
+	docker build -f ops/sync.Dockerfile -t `whoami`/ckmill_sync:$v -t ckmill_sync:$v .
+	mkdir -p build && touch build/sync
+
+build/ck.bundle.js: node_modules webpack.console.js $(js)
 	$(webpack) --config ops/webpack.console.js
+
+build/sync.bundle.js: node_modules webpack.sync.js $(js)
+	$(webpack) --config ops/webpack.sync.js
 
 node_modules: package.json package-lock.json
 	npm install

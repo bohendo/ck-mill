@@ -3,15 +3,14 @@ const path = require('path')
 
 module.exports = {
 
+  target: 'node',
   externals: ['web3', 'eth'],
 
-  entry: './src/console.js',
+  entry: './src/sync.js',
 
   output: {
     path: path.join(__dirname, '../build'),
-    filename: 'ck.bundle.js',
-    library: 'ck',
-    libraryTarget: 'assign',
+    filename: 'sync.bundle.js',
   },
 
   resolve: {
@@ -26,6 +25,7 @@ module.exports = {
           loader: 'babel-loader',
           options: { presets: ['es2015'], },
         },
+        exclude: ['node_modules']
       },
     ],
   },
