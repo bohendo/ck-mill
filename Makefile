@@ -2,48 +2,44 @@
 ##### MAGIC VARIABLES #####
 
 SHELL=/bin/bash # default: /bin/sh
-VPATH=src:docker:build
+VPATH=src:ops:build
 
 webpack=node_modules/.bin/webpack
 
 ##### CALCULATED VARIABLES #####
 
-v=$(shell grep "\"version\"" ./package.json | egrep -o [0-9.]*)
+#v=$(shell grep "\"version\"" ./package.json | egrep -o [0-9.]*)
+v=latest
 
 # Input files
-js=$(shell find ./src -type f -name "*.js*")
+js=$(shell find ./src -type f -name "*.js")
 
 # Output files
-bundles=salesync.bundle.js kittysync.bundle.js breeder.bundle.js
+bundles=ck.bundle.js sync.bundle.js
 
 ##### RULES #####
 # first rule is the default
 
-all: salesync kittysync breeder
+all: console sync
 	@true
 
-deploy: salesync kittysync breeder
-	docker build -f docker/salesync.Dockerfile -t `whoami`/ckmill_salesync:$v -t ckmill_salesync:$v .
-	docker build -f docker/kittysync.Dockerfile -t `whoami`/ckmill_kittysync:$v -t ckmill_kittysync:$v .
-	docker build -f docker/breeder.Dockerfile -t `whoami`/ckmill_breeder:$v -t ckmill_breeder:$v .
-	docker push `whoami`/ckmill_salesync:$v
-	docker push `whoami`/ckmill_kittysync:$v
-	docker push `whoami`/ckmill_breeder:$v
+deploy: console sync
+	docker push `whoami`/ckmill_console:$v
+	docker push `whoami`/ckmill_sync:$v
 
-salesync: salesync.Dockerfile salesync.bundle.js
-	docker build -f docker/salesync.Dockerfile -t `whoami`/ckmill_salesync:latest -t ckmill_salesync:latest .
-	mkdir -p build && touch build/salesync
+console: console.Dockerfile ck.bundle.js
+	docker build -f ops/console.Dockerfile -t `whoami`/ckmill_console:$v -t ckmill_console:$v .
+	mkdir -p build && touch build/console
 
-kittysync: kittysync.Dockerfile kittysync.bundle.js
-	docker build -f docker/kittysync.Dockerfile -t `whoami`/ckmill_kittysync:latest -t ckmill_kittysync:latest .
-	mkdir -p build && touch build/kittysync
+sync: sync.Dockerfile sync.bundle.js
+	docker build -f ops/sync.Dockerfile -t `whoami`/ckmill_sync:$v -t ckmill_sync:$v .
+	mkdir -p build && touch build/sync
 
-breeder: breeder.Dockerfile breeder.bundle.js
-	docker build -f docker/breeder.Dockerfile -t `whoami`/ckmill_breeder:latest -t ckmill_breeder:latest .
-	mkdir -p build && touch build/breeder
+build/ck.bundle.js: node_modules webpack.console.js $(js)
+	$(webpack) --config ops/webpack.console.js
 
-$(bundles): node_modules webpack.config.js $(js)
-	$(webpack) --config webpack.config.js
+build/sync.bundle.js: node_modules webpack.sync.js $(js)
+	$(webpack) --config ops/webpack.sync.js
 
 node_modules: package.json package-lock.json
 	npm install

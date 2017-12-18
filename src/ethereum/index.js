@@ -4,9 +4,9 @@ import net from 'net'
 import Web3 from 'web3'
 
 // Etherscan Data
-import kittyCoreABI from '../../imports/kittyCore.json'
-import kittySaleABI from '../../imports/kittySale.json'
-import kittySireABI from '../../imports/kittySire.json'
+import kittyCoreABI from '../ck/kittyCore.json'
+import kittySaleABI from '../ck/kittySale.json'
+import kittySireABI from '../ck/kittySire.json'
 
 ////////////////////////////////////////
 // Magic Numbers
@@ -31,4 +31,5 @@ const ck = {
   sale: new web3.eth.Contract(kittySaleABI, mn.saleAddress, { from: mn.from }),
   sire: new web3.eth.Contract(kittySireABI, mn.sireAddress, { from: mn.from }),
 }
+
 export { web3, ck, mn }

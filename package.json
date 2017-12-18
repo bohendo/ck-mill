@@ -1,27 +1,28 @@
 {
   "name": "cryptokitty-mill",
-  "version": "0.0.0",
+  "version": "0.5.0",
   "description": "",
   "main": "",
   "scripts": {
     "watch": "webpack --watch --config webpack.config.js",
-    "start": "make && docker stack deploy -c docker/compose.yml ckmill",
+    "start": "make && docker stack deploy -c ops/docker-compose.yml ckmill",
     "reset": "docker stack rm ckmill && touch src/*.js && npm start",
     "build": "webpack --config webpack.config.js",
     "kittylogs": "docker service logs -f --no-task-ids ckmill_kittysync",
     "salelogs": "docker service logs -f --no-task-ids ckmill_salesync",
-    "breedlogs": "docker service logs -f --no-task-ids ckmill_breeder",
     "dblogs": "docker service logs -f --no-task-ids ckmill_postgres",
-    "deploy": "bash deploy.sh"
+    "deploy": "bash ops/deploy.sh"
   },
   "author": "",
   "license": "GPLv3",
-  "dependencies": {
-    "babel-cli": "^6.26.0",
+  "devDependencies": {
+    "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
-    "node-fetch": "^1.7.3",
-    "pg": "^7.4.0",
+    "babel-preset-es2015": "^6.24.1",
     "web3": "^1.0.0-beta.26",
     "webpack": "^3.10.0"
+  },
+  "dependencies": {
+    "pg": "^7.4.0"
   }
 }
