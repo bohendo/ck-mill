@@ -3,14 +3,98 @@ import db from './db/'
 
 const printq = true
 
-const syncAuctionCreated = (from) => {
-}
+const syncKitties = (fromBlock) => {
 
+  db.query(`CREATE TABLE IF NOT EXISTS Transfer (
+    txhash     CHAR(66)    PRIMARY KEY,
+    blockn     BIGINT      NOT NULL,
+    sender     CHAR(42)    NOT NULL,
+    recipient  CHAR(42)    NOT NULL,
+    kittyid    BIGINT      NOT NULL);`)
+  db.query(`CREATE TABLE IF NOT EXISTS Approval (
+    txhash     CHAR(66)    PRIMARY KEY,
+    blockn     BIGINT      NOT NULL,
+    owner      CHAR(42)    NOT NULL,
+    approved   CHAR(42)    NOT NULL,
+    kittyid    BIGINT      NOT NULL);`)
+  db.query(`CREATE TABLE IF NOT EXISTS Birth (
+    txhash     CHAR(66)    PRIMARY KEY,
+    blockn     BIGINT      NOT NULL,
+    owner      CHAR(42)    NOT NULL,
+    kittyid    BIGINT      NOT NULL,
+    matronid   BIGINT      NOT NULL,
+    sireid     BIGINT      NOT NULL,
+    genes      NUMERIC(78) NOT NULL);`)
+  db.query(`CREATE TABLE IF NOT EXISTS Pregnant (
+    txhash      CHAR(66)    PRIMARY KEY,
+    blockn      BIGINT      NOT NULL,
+    owner       CHAR(42)    NOT NULL,
+    matronid    BIGINT      NOT NULL,
+    sireid      BIGINT      NOT NULL,
+    cooldownend NUMERIC(78) NOT NULL);`)
+
+  // Event will be one of 'transfer', 'approval', 'birth', or 'pregnant'
+  const saveEvent = (name, data) => {
+    let q = `INSERT INTO ${name} VALUES ('${data.transactionHash}', 
+      ${data.blockNumber}, ` // q for Query
+
+    // These two events return the same number of the same data types, how convenient
+    // pay attention to which ${} are strings that need to be enclosed in quotes eg '${}'
+    if (name === 'Transfer' || name === 'Approval') {
+      q += `'${data.returnValues[0]}', '${data.returnValues[1]}',
+      ${data.returnValues[2]});`
+    } else if (name === 'Birth') {
+      q += `'${data.returnValues[0]}',
+      ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]},
+      ${data.returnValues[4]});`
+    } else if (name === 'Pregnant') {
+      q += `'${data.returnValues[0]}',
+      ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]});`
+    }
+
+    if (printq) { console.log(q) }
+    db.query(q).catch(error=>{
+      // I'll let postgres quietly sort out my duplicate queries for me
+      if (error.code !== '23505') { console.error(error) }
+    })
+  }
+
+
+  const listen = (fromBlock, event) => {
+    // get current/future events
+    ck.core.events[event]({ fromBlock }, (err, res) => {
+      if (err) { console.error(err); process.exit(1) }
+      saveEvent(event, res)
+    })
+  }
+  listen(fromBlock, 'Transfer')
+  listen(fromBlock, 'Approval')
+  listen(fromBlock, 'Birth')
+  listen(fromBlock, 'Pregnant')
+
+  const remember = (i, event) => {
+    // mn for Magic Numbers, this magic fromBlock is the one at which ck was deployed
+    if (i < mn.fromBlock) return ('done')
+    ck.core.getPastEvents(event, { fromBlock: i, toBlock: i }, (err, res) => {
+      if (err) { console.error(err); process.exit(1) }
+      res.forEach(data=>{
+        saveEvent(event, data)
+      })
+    })
+    // Move on to the next (give node a hot sec to clear the call stack)
+    setTimeout(()=>{remember(i-1, event)}, 0)
+  }
+  remember(fromBlock, 'Transfer')
+  remember(fromBlock, 'Approval')
+  remember(fromBlock, 'Birth')
+  remember(fromBlock, 'Pregnant')
+
+ }
 
 // Define event listeners
-const syncAuctions = (from) => {
+const syncAuctions = (fromBlock) => {
 
-  // sors for Sale or Sire, equals either 'sale' or 'sire'
+  // sors for Sale or Sire, equals one of 'sale' or 'sire'
   const dbinit = (sors) => {
     db.query(`CREATE TABLE IF NOT EXISTS ${sors}AuctionCreated (
       txhash     CHAR(66)    PRIMARY KEY,
@@ -37,15 +121,15 @@ const syncAuctions = (from) => {
     let q = `INSERT INTO ${sors}${event} VALUES (`
     if (event === 'AuctionCreated') {
       q += `'${auction.transactionHash}',
-       ${auction.blockNumber}, ${auction.returnValues[0]}, ${auction.returnValues[1]},
-       ${auction.returnValues[2]}, ${auction.returnValues[3]});`
+        ${auction.blockNumber}, ${auction.returnValues[0]}, ${auction.returnValues[1]},
+        ${auction.returnValues[2]}, ${auction.returnValues[3]});`
     } else if (event === 'AuctionSuccessful') {
       q += `'${auction.transactionHash}',
-       ${auction.blockNumber}, ${auction.returnValues[0]}, ${auction.returnValues[1]},
-      '${auction.returnValues[2]}');`
+        ${auction.blockNumber}, ${auction.returnValues[0]}, ${auction.returnValues[1]},
+       '${auction.returnValues[2]}');`
     } else if (event === 'AuctionCancelled') {
       q += `'${auction.transactionHash}',
-       ${auction.blockNumber}, ${auction.returnValues[0]});`
+        ${auction.blockNumber}, ${auction.returnValues[0]});`
     }
 
     if (printq) { console.log(q) }
@@ -55,22 +139,23 @@ const syncAuctions = (from) => {
     })
   }
 
-  const listen = (from, sors, event) => {
+  const listen = (fromBlock, sors, event) => {
     // get current/future events
-    ck[sors].events[event]({ fromBlock: from }, (err, res) => {
+    ck[sors].events[event]({ fromBlock }, (err, res) => {
       if (err) { console.error(err); process.exit(1) }
       saveAuction(res, sors, event)
     })
   }
-  listen(from, 'sale', 'AuctionCreated')
-  listen(from, 'sire', 'AuctionCreated')
-  listen(from, 'sale', 'AuctionSuccessful')
-  listen(from, 'sire', 'AuctionSuccessful')
-  listen(from, 'sale', 'AuctionCancelled')
-  listen(from, 'sire', 'AuctionCancelled')
+  listen(fromBlock, 'sale', 'AuctionCreated')
+  listen(fromBlock, 'sire', 'AuctionCreated')
+  listen(fromBlock, 'sale', 'AuctionSuccessful')
+  listen(fromBlock, 'sire', 'AuctionSuccessful')
+  listen(fromBlock, 'sale', 'AuctionCancelled')
+  listen(fromBlock, 'sire', 'AuctionCancelled')
 
-  // get past events | sors for Sale OR Sire
+  // get past events
   const remember = (i, sors, event) => {
+    // mn for Magic Numbers, this magic fromBlock is the one at which ck was deployed
     if (i < mn.fromBlock) return ('done')
     ck[sors].getPastEvents(event, { fromBlock: i, toBlock: i }, (err, res) => {
       if (err) { console.error(err); process.exit(1) }
@@ -81,17 +166,18 @@ const syncAuctions = (from) => {
     // Move on to the next (give node a hot sec to clear the call stack)
     setTimeout(()=>{remember(i-1, sors, event)}, 0)
   }
-  remember(from, 'sale', 'AuctionCreated')
-  remember(from, 'sire', 'AuctionCreated')
-  remember(from, 'sale', 'AuctionSuccessful')
-  remember(from, 'sire', 'AuctionSuccessful')
-  remember(from, 'sale', 'AuctionCancelled')
-  remember(from, 'sire', 'AuctionCancelled')
+  remember(fromBlock, 'sale', 'AuctionCreated')
+  remember(fromBlock, 'sire', 'AuctionCreated')
+  remember(fromBlock, 'sale', 'AuctionSuccessful')
+  remember(fromBlock, 'sire', 'AuctionSuccessful')
+  remember(fromBlock, 'sale', 'AuctionCancelled')
+  remember(fromBlock, 'sire', 'AuctionCancelled')
 }
 
 // Activate!
 web3.eth.getBlock('latest').then(res => {
   console.log(`Starting event watchers from block ${res.number}`)
   syncAuctions(res.number)
+  syncKitties(res.number)
 })
 
