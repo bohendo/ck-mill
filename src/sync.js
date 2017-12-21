@@ -3,6 +3,10 @@ import db from './db/'
 
 const printq = true
 
+// Pause $throttle seconds between recalling events from previous blocks
+// Geth can't stay synced if we relentlessly request data from it
+const throttle = 1
+
 const syncKitties = (fromBlock) => {
 
   db.query(`CREATE TABLE IF NOT EXISTS Transfer (
@@ -81,8 +85,8 @@ const syncKitties = (fromBlock) => {
         saveEvent(event, data)
       })
     })
-    // Move on to the next (give node a hot sec to clear the call stack)
-    setTimeout(()=>{remember(i-1, event)}, 0)
+    // give node a sec to clear the call stack & give geth a sec to stay synced
+    setTimeout(()=>{remember(i-1, event)}, throttle)
   }
   remember(fromBlock, 'Transfer')
   remember(fromBlock, 'Approval')
@@ -164,7 +168,7 @@ const syncAuctions = (fromBlock) => {
       })
     })
     // Move on to the next (give node a hot sec to clear the call stack)
-    setTimeout(()=>{remember(i-1, sors, event)}, 0)
+    setTimeout(()=>{remember(i-1, sors, event)}, throttle)
   }
   remember(fromBlock, 'sale', 'AuctionCreated')
   remember(fromBlock, 'sire', 'AuctionCreated')

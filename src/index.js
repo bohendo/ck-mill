@@ -1,12 +1,10 @@
 import { core, sale, sire } from './ck/'
 
 const fromBlock = 4605167
-const bg = {
-  gen0: [25493],
-  gen1: [228842, 117491, 113881, 85736, 3954],
-  gen2: [279505, 282323],
-  gen2B: [335778],
-  gen2C: [258963],
+
+const myKitties = () => {
+  // TODO: don't hardcode my kitties...
+  return [25493, 3954, 85736, 113881, 117491, 228842, 258963, 279505, 282323, 344576, 345869, 375866]
 }
 
 const breedGroup = (lok) => {
@@ -89,20 +87,6 @@ const sellKitty = (id, milli) => {
   return status()
 }
 
-const getMyKitties = (addr) => {
-  const myKitties = []
-  let max = core.totalSupply.call()
-  for (let i=0; i<max; i++) {
-    if (i > 0 && i % 100 === 0) {
-      console.log(`Looking for your kitties around block ${i}`)
-    }
-    if (addr === core.ownerOf(i)) {
-      myKitties.push(i)
-    }
-  }
-  return myKitties
-}
-
 // Helpful function for getting all kitty data
 const getKitty = (id) => {
 
@@ -157,4 +141,20 @@ const getKitty = (id) => {
   return kitty
 }
 
- export { core, sale, sire, fromBlock, getKitty, getMyKitties, sellKitty, status, bg, breedGroup }
+const ls = () => {
+  const mk = myKitties() // mk for My Kitties
+  for (let i=0; i<mk.length; i++) {
+    let k = getKitty(mk[i]) // k for Kitty
+    let msg = `Kitty ${mk[i]} gen=${k.generation} cdi=${k.cooldownIndex} lineage=`
+    if (Number(k.matronId) > Number(k.sireId)) {
+      msg += `${k.sireId}-${k.matronId} `
+    } else {
+      msg += `${k.matronId}-${k.sireId} `
+    }
+    if (k.ispregnant) msg += '[Pregnant] '
+    if (k.isready) msg += '[Ready] '
+    console.log(msg)
+  }
+}
+
+export { core, sale, sire, fromBlock, getKitty, sellKitty, status, breedGroup, myKitties, ls }
