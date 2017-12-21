@@ -121,15 +121,15 @@ const syncAuctions = (fromBlock) => {
     let q = `INSERT INTO ${sors}${event} VALUES (`
     if (event === 'AuctionCreated') {
       q += `'${auction.transactionHash}',
-        ${auction.blockNumber}, ${auction.returnValues[0]}, ${auction.returnValues[1]},
-        ${auction.returnValues[2]}, ${auction.returnValues[3]});`
+      ${auction.blockNumber}, ${auction.returnValues[0]}, ${auction.returnValues[1]},
+      ${auction.returnValues[2]}, ${auction.returnValues[3]});`
     } else if (event === 'AuctionSuccessful') {
       q += `'${auction.transactionHash}',
-        ${auction.blockNumber}, ${auction.returnValues[0]}, ${auction.returnValues[1]},
-       '${auction.returnValues[2]}');`
+      ${auction.blockNumber}, ${auction.returnValues[0]}, ${auction.returnValues[1]},
+      '${auction.returnValues[2]}');`
     } else if (event === 'AuctionCancelled') {
       q += `'${auction.transactionHash}',
-        ${auction.blockNumber}, ${auction.returnValues[0]});`
+      ${auction.blockNumber}, ${auction.returnValues[0]});`
     }
 
     if (printq) { console.log(q) }
