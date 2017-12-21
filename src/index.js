@@ -23,16 +23,14 @@ const findBreedingPair = (lok) => {
   for (let i=0; i<lok.length; i++) {
     for (let j=i+1; j<lok.length; j++) {
       if (core.canBreedWith(lok[i], lok[j]) && kitties[i].isReady && kitties[j].isReady) {
-        let mid = kitties[i].
+        let mid = kitties[i]
         bps.push([i, j])
       }
     }
   }
   console.log(JSON.stringify(bps,null,2))
 
-  // First priority, make as many genetically unique kitties as possible
-
-  // Second priority, breed oldest sire with youngest matron
+  // Breed oldest sire with youngest matron
 
 }
 

@@ -37,7 +37,8 @@ const syncKitties = (fromBlock) => {
     sireid      BIGINT      NOT NULL,
     cooldownend NUMERIC(78) NOT NULL);`)
 
-  // Event will be one of 'transfer', 'approval', 'birth', or 'pregnant'
+  // name [string] will be one of 'transfer', 'approval', 'birth', or 'pregnant'
+  // data [object] will contain tx receipt and return values from event
   const saveEvent = (name, data) => {
     let q = `INSERT INTO ${name} VALUES ('${data.transactionHash}', 
       ${data.blockNumber}, ` // q for Query
@@ -63,12 +64,13 @@ const syncKitties = (fromBlock) => {
     })
   }
 
-
-  const listen = (fromBlock, event) => {
+  // fromBlock [int] start listening from this block number
+  // name [string] of event to listen for
+  const listen = (fromBlock, name) => {
     // get current/future events
-    ck.core.events[event]({ fromBlock }, (err, res) => {
+    ck.core.events[name]({ fromBlock }, (err, data) => {
       if (err) { console.error(err); process.exit(1) }
-      saveEvent(event, res)
+      saveEvent(name, data)
     })
   }
   listen(fromBlock, 'Transfer')
@@ -76,17 +78,19 @@ const syncKitties = (fromBlock) => {
   listen(fromBlock, 'Birth')
   listen(fromBlock, 'Pregnant')
 
-  const remember = (i, event) => {
+  // i [int] remember past events from block number i
+  // name [string] of event to remember
+  const remember = (i, name) => {
     // mn for Magic Numbers, this magic fromBlock is the one at which ck was deployed
     if (i < mn.fromBlock) return ('done')
-    ck.core.getPastEvents(event, { fromBlock: i, toBlock: i }, (err, res) => {
+    ck.core.getPastEvents(name, { fromBlock: i, toBlock: i }, (err, res) => {
       if (err) { console.error(err); process.exit(1) }
       res.forEach(data=>{
-        saveEvent(event, data)
+        saveEvent(name, data)
       })
     })
     // give node a sec to clear the call stack & give geth a sec to stay synced
-    setTimeout(()=>{remember(i-1, event)}, throttle)
+    setTimeout(()=>{remember(i-1, name)}, throttle)
   }
   remember(fromBlock, 'Transfer')
   remember(fromBlock, 'Approval')
