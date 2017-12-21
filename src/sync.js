@@ -4,8 +4,8 @@ import db from './db/'
 const printq = true
 
 // Pause $throttle seconds between recalling events from previous blocks
-// Geth can't stay synced if we relentlessly request data from it
-const throttle = 1
+// Because geth can't stay synced if we relentlessly request data from it
+const throttle = 0.5
 
 const syncKitties = (fromBlock) => {
 

@@ -2,9 +2,38 @@ import { core, sale, sire } from './ck/'
 
 const fromBlock = 4605167
 
+// bg for breeding group 1
+const bg1 = [25493, 3954, 85736, 113881, 117491, 228842]
+const bg2 = [258963, 279505, 282323, 344576, 345869, 375866]
+
 const myKitties = () => {
   // TODO: don't hardcode my kitties...
   return [25493, 3954, 85736, 113881, 117491, 228842, 258963, 279505, 282323, 344576, 345869, 375866]
+}
+
+const findBreedingPair = (lok) => {
+  console.log('Loading kitties...')
+  const kitties = []
+  for (let i=0; i<lok.length; i++) {
+    kitties.push(getKitty(lok[i]))
+  }
+  console.log('Done!')
+
+  var bps = []
+  for (let i=0; i<lok.length; i++) {
+    for (let j=i+1; j<lok.length; j++) {
+      if (core.canBreedWith(lok[i], lok[j]) && kitties[i].isReady && kitties[j].isReady) {
+        let mid = kitties[i].
+        bps.push([i, j])
+      }
+    }
+  }
+  console.log(JSON.stringify(bps,null,2))
+
+  // First priority, make as many genetically unique kitties as possible
+
+  // Second priority, breed oldest sire with youngest matron
+
 }
 
 const breedGroup = (lok) => {
@@ -151,10 +180,10 @@ const ls = () => {
     } else {
       msg += `${k.matronId}-${k.sireId} `
     }
-    if (k.ispregnant) msg += '[Pregnant] '
-    if (k.isready) msg += '[Ready] '
+    if (k.isPregnant) msg += '[Pregnant] '
+    if (k.isReady) msg += '[Ready] '
     console.log(msg)
   }
 }
 
-export { core, sale, sire, fromBlock, getKitty, sellKitty, status, breedGroup, myKitties, ls }
+export { core, sale, sire, fromBlock, getKitty, sellKitty, status, breedGroup, myKitties, findBreedingPair, ls, bg1, bg2 }
