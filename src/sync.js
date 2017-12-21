@@ -5,7 +5,7 @@ const printq = true
 
 // Pause $throttle seconds between recalling events from previous blocks
 // Because geth can't stay synced if we relentlessly request data from it
-const throttle = 0.5
+const throttle = 3
 
 const syncKitties = (fromBlock) => {
 
@@ -15,12 +15,14 @@ const syncKitties = (fromBlock) => {
     sender     CHAR(42)    NOT NULL,
     recipient  CHAR(42)    NOT NULL,
     kittyid    BIGINT      NOT NULL);`)
+
   db.query(`CREATE TABLE IF NOT EXISTS Approval (
     txhash     CHAR(66)    PRIMARY KEY,
     blockn     BIGINT      NOT NULL,
     owner      CHAR(42)    NOT NULL,
     approved   CHAR(42)    NOT NULL,
     kittyid    BIGINT      NOT NULL);`)
+
   db.query(`CREATE TABLE IF NOT EXISTS Birth (
     txhash     CHAR(66)    PRIMARY KEY,
     blockn     BIGINT      NOT NULL,
@@ -29,6 +31,7 @@ const syncKitties = (fromBlock) => {
     matronid   BIGINT      NOT NULL,
     sireid     BIGINT      NOT NULL,
     genes      NUMERIC(78) NOT NULL);`)
+
   db.query(`CREATE TABLE IF NOT EXISTS Pregnant (
     txhash      CHAR(66)    PRIMARY KEY,
     blockn      BIGINT      NOT NULL,
@@ -48,10 +51,12 @@ const syncKitties = (fromBlock) => {
     if (name === 'Transfer' || name === 'Approval') {
       q += `'${data.returnValues[0]}', '${data.returnValues[1]}',
       ${data.returnValues[2]});`
+
     } else if (name === 'Birth') {
       q += `'${data.returnValues[0]}',
       ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]},
       ${data.returnValues[4]});`
+
     } else if (name === 'Pregnant') {
       q += `'${data.returnValues[0]}',
       ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]});`

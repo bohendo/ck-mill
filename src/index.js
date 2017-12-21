@@ -12,26 +12,50 @@ const myKitties = () => {
 }
 
 const findBreedingPair = (lok) => {
-  console.log('Loading kitties...')
   const kitties = []
   for (let i=0; i<lok.length; i++) {
     kitties.push(getKitty(lok[i]))
   }
-  console.log('Done!')
 
+  // bps for Breeding PairS
   var bps = []
   for (let i=0; i<lok.length; i++) {
     for (let j=i+1; j<lok.length; j++) {
       if (core.canBreedWith(lok[i], lok[j]) && kitties[i].isReady && kitties[j].isReady) {
-        let mid = kitties[i]
-        bps.push([i, j])
+        if (kitties[i].cooldownIndex > kitties[j].cooldownIndex) {
+          bps.push([j, i]) // low cooldown first
+        } else {
+          bps.push([i, j])
+        }
       }
     }
   }
-  console.log(JSON.stringify(bps,null,2))
 
-  // Breed oldest sire with youngest matron
+  bps.sort((a,b)=>{
+    // da for Delta A or cooldown difference in pair a
+    let da = Math.abs(kitties[a[0]].cooldownIndex-kitties[a[1]].cooldownIndex)
+    let db = Math.abs(kitties[b[0]].cooldownIndex-kitties[b[1]].cooldownIndex)
+    // return -1 if a should come before b
+    return db-da // sort so greatest differences are in front
+  })
 
+  // get list of recommended breedings
+  // no recommendations should be mutually exclusive
+  const output = []
+  while (bps.length) {
+    output.push([lok[bps[0][0]], lok[bps[0][1]]])
+    bps = bps.filter((pair)=>{
+      for (let p=0; p<output.length; p++) {
+        if (lok[pair[0]] === output[p][0] || lok[pair[0]] === output[p][1] ||
+            lok[pair[1]] === output[p][0] || lok[pair[1]] === output[p][1]) {
+          return (false)
+        }
+      }
+      return (true)
+    })
+  }
+
+  return (output)
 }
 
 const breedGroup = (lok) => {
