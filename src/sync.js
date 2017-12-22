@@ -1,12 +1,15 @@
-import { web3, ck, mn } from './ethereum/'
+import { web3, ck } from './ethereum/web3'
 import db from './db/'
+
+// block at which cryptokitties was deployed
+const firstBlock = 4605167
 
 // noisy yet useful
 const printq = true
 
 // Pause throttle milliseconds between recalling events from previous blocks
 // (Because geth can't stay synced if we relentlessly request data from it)
-const throttle = 100
+const throttle = 500
 
 const syncEvents = () => {
 
@@ -126,8 +129,7 @@ const syncEvents = () => {
       // i [int] remember past events from block number i
       // name [string] of event to remember
       const remember = (i, contract, name) => {
-        // mn for Magic Numbers, this magic fromBlock is the one at which ck was deployed
-        if (i < mn.fromBlock) return ('done')
+        if (i < firstBlock) return ('done')
         ck[contract].getPastEvents(name, { fromBlock: i, toBlock: i }, (err, pastEvents) => {
           if (err) { console.error(err); process.exit(1) }
           pastEvents.forEach(data=>{

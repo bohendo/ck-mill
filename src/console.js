@@ -1,6 +1,4 @@
-import { core, sale, sire } from './ck/'
-
-const fromBlock = 4605167
+import { core, sale, sire } from './ethereum/geth'
 
 // bg for breeding group 1
 const bg0 = [25493]
@@ -209,4 +207,4 @@ const ls = () => {
   }
 }
 
-export { core, sale, sire, fromBlock, getKitty, sellKitty, status, breedGroup, myKitties, findBreedingPair, ls, bg0, bg1, bg2 }
+export { core, sale, sire, getKitty, sellKitty, status, breedGroup, myKitties, findBreedingPair, ls, bg0, bg1, bg2 }

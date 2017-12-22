@@ -5,7 +5,7 @@ module.exports = {
 
   externals: ['web3', 'eth'],
 
-  entry: './src/index.js',
+  entry: './src/console.js',
 
   output: {
     path: path.join(__dirname, '../build'),
