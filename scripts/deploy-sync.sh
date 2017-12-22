@@ -61,3 +61,4 @@ services:
 EOF
 
 docker stack deploy -c /tmp/docker-compose.yml ckmill
+rm /tmp/docker-compose.yml
