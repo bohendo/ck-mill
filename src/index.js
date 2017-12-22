@@ -3,7 +3,8 @@ import { core, sale, sire } from './ck/'
 const fromBlock = 4605167
 
 // bg for breeding group 1
-const bg1 = [25493, 3954, 85736, 113881, 117491, 228842]
+const bg0 = [25493]
+const bg1 = [3954, 85736, 113881, 117491, 228842]
 const bg2 = [258963, 279505, 282323, 344576, 345869, 375866]
 
 const myKitties = () => {
@@ -208,4 +209,4 @@ const ls = () => {
   }
 }
 
-export { core, sale, sire, fromBlock, getKitty, sellKitty, status, breedGroup, myKitties, findBreedingPair, ls, bg1, bg2 }
+export { core, sale, sire, fromBlock, getKitty, sellKitty, status, breedGroup, myKitties, findBreedingPair, ls, bg0, bg1, bg2 }
