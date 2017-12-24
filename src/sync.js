@@ -179,6 +179,55 @@ const syncEvents = () => {
   })
  }
 
+const syncKitties = () => {
+    ck.core.methods.totalSupply().call((error,totalKitty) => {
+        if (error)
+        {
+            console.error(error);
+            return error;
+        }
+        console.log(`Total Supply = ${totalKitty}`)
+        db.query(`CREATE TABLE IF NOT EXISTS Kitties (
+            kittyId         BIGINT      PRIMARY KEY,
+            isPregnant      BOOLEAN     NOT NULL,
+            isReady         BOOLEAN     NOT NULL,
+            coolDownIndex   BIGINT      NOT NULL,
+            nextAuctionTime BIGINT      NOT NULL,
+            siringWith      BIGINT      NOT NULL,
+            birthTime       BIGINT      NOT NULL,
+            matronId        BIGINT      NOT NULL,
+            sireId          BIGINT      NOT NULL,
+            generation      BIGINT      NOT NULL,
+            genes           NUMERIC(78) NOT NULL);`)
+
+        db.query(`Select kittyId from Kitties order by kittyid`).then(res => {
+            const ids = res.rows.map((row) => Number(row.kittyid))
+            const kittyLoop = (i) => {
+                if (i > totalKitty) return ('done')
+                if (!ids.includes(i)) {
+                    ck.core.methods.getKitty(i).call((error,kitty) => {
+                        if (error) { return (error) }
+
+                        let q = `INSERT INTO Kitties VALUES (${i}, ${kitty[0]}, ${kitty[1]}, ${kitty[2]}, ${kitty[3]}, ${kitty[4]}, ${kitty[5]}, ${kitty[6]}, ${kitty[7]}, ${kitty[8]}, ${kitty[9]});`
+
+                        db.query(q).then(res => {
+                            if (printq) { console.log(q) }
+                        }).catch(error =>{
+                            if (error.code !== '23505') { console.error(error) }
+                        })
+                        setTimeout(() => { kittyLoop(i+1) }, throttle/2);
+                    })
+                }
+                else {
+                    setTimeout(() => { kittyLoop(i+1) }, 1);
+                }
+            }
+            kittyLoop(1)
+        })
+    })
+}
+
 // Activate!
+syncKitties();
 syncEvents()
 
