@@ -1,4 +1,4 @@
-import * as ck from './index'
+import { ck } from './ethereum/geth'
 
 // When this function returns, it will be executed again after a short delay
 const heartbeat = (n) => {

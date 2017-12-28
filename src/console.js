@@ -1,13 +1,13 @@
 import { core, sale, sire } from './ethereum/geth'
 
+// TODO: don't hardcode my kitties...
 // bg for breeding group 1
-const bg0 = [25493]
-const bg1 = [3954, 85736, 113881, 117491, 228842]
-const bg2 = [258963, 279505, 282323, 344576, 345869, 375866]
+const bg0 = [25493, 403350]
+const bg1 = [3954, 85736, 113881, 117491, 228842, 418037]
+const bg2 = [258963, 279505, 282323, 344576, 345869, 375866, 381126, 382851, 382857, 392928]
 
 const myKitties = () => {
-  // TODO: don't hardcode my kitties...
-  return [25493, 3954, 85736, 113881, 117491, 228842, 258963, 279505, 282323, 344576, 345869, 375866]
+  return [].concat.apply([], [bg0, bg1, bg2])
 }
 
 const findBreedingPair = (lok) => {
