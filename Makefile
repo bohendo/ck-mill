@@ -15,28 +15,43 @@ me=$(shell whoami)
 # Input files
 js=$(shell find ./src -type f -name "*.js")
 
+# Make sure our build directory exists
+$(shell mkdir -p build)
+
 ##### RULES #####
 # first rule is the default
 
-all: console sync autobirther
+all: console-image sync-image autobirther-image
 	@true
 
-deploy: console sync autobirther
+deploy: console-image sync-image autobirther-image
 	docker push $(me)/ckmill_console:$v
 	docker push $(me)/ckmill_sync:$v
 	docker push $(me)/ckmill_autobirther:$v
 
-console: console.Dockerfile ck.bundle.js
+build/console: console-image
+	docker push $(me)/ckmill_console:$v
+	touch build/console
+
+build/sync: sync-image
+	docker push $(me)/ckmill_sync:$v
+	touch build/sync
+
+build/autobirther: autobirther-image
+	docker push $(me)/ckmill_autobirther:$v
+	touch build/autobirther
+
+build/console-image: console.Dockerfile ck.bundle.js
 	docker build -f ops/console.Dockerfile -t $(me)/ckmill_console:$v -t ckmill_console:$v .
-	mkdir -p build && touch build/console
+	touch build/console-image
 
-sync: sync.Dockerfile sync.bundle.js
+build/sync-image: sync.Dockerfile sync.bundle.js
 	docker build -f ops/sync.Dockerfile -t $(me)/ckmill_sync:$v -t ckmill_sync:$v .
-	mkdir -p build && touch build/sync
+	touch build/sync-image
 
-autobirther: autobirther.Dockerfile autobirther.bundle.js
+build/autobirther-image: autobirther.Dockerfile autobirther.bundle.js
 	docker build -f ops/autobirther.Dockerfile -t $(me)/ckmill_autobirther:$v -t ckmill_autobirther:$v .
-	mkdir -p build && touch build/autobirther
+	touch build/autobirther-image
 
 build/ck.bundle.js: node_modules webpack.console.js $(js)
 	$(webpack) --config ops/webpack.console.js
