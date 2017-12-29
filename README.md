@@ -1,7 +1,7 @@
 
 ## Cryptokitties Smart-Contract Cheat-Sheet
 
-# KittyCore: [0x06012c8cf97BEaD5deAe237070F9587f8E7A266d](https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#code)
+# KittyCore Contract: [0x06012c8cf97BEaD5deAe237070F9587f8E7A266d](https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#code)
 
 ### Dependencies/External Calls
  - `saleAuction()`: address of sales-auction contract aka "0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C"
@@ -36,7 +36,25 @@
  - `Birth(owner [address], kittyID [uint256], matronID [uint256], sireID [uint256], genes [uint256])`
  - `Pregnant(owner [address], matronID [uint256], sireID [uint256], cooldownEndBlock [uint256])`
 
-# KittySales: [0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C](https://etherscan.io/address/0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C#code)
+### Storage aka `eth.getStorageAt(core.address, i)` where `i =`
+ 0. ceoAddress: `0x000000000000000000000000af1e54b359b0897133f437fc961dd16f20c045e1`
+ 1. cfoAddress: `0x0000000000000000000000002041bb7d8b49f0bde3aa1fa7fb506ac6c539394c`
+ 2. cooAddress: `0x000000000000000000000000a1e12defa6dbc8e900a6596083322946c03f01e3`
+ 3. first half of cooldowns array: `0x0000384000001c2000000e1000000708000002580000012c000000780000003c`
+ 4. second half of cooldowns array: `0x000000000000000000093a80000546000002a300000151800000e10000007080`
+ 5. seconds per block: `0x000000000000000000000000000000000000000000000000000000000000000f`
+ 6. kitties: length eg `0x00000000000000000000000000000000000000000000000000000000000682cb`
+ 7. kittyIndexToOwner 
+ 8. ownershipTokenCount
+ 9. ownershipTokenCount
+ 10. sireAllowedToAddress
+ 11. saleAuction(?): `0x000000000000000000000000b1690c08e213a35ed9bab7b318de14420fb57d8c`
+ 12. sireAuction(?): `0x000000000000000000000000c7af99fe5513eb6710e6d5f44f9989da40f27f26`
+ 13. ???
+
+(Above labels are according to order of declared variables in kitty core contract source code)
+
+# KittySales Contract: [0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C](https://etherscan.io/address/0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C#code)
 
 ### Calls/Reads
  - `getAuction(kittyID [uint256])`: returns [seller [address], startPrice [uint256], endPrice [uint256], duration [uint256], startTime [uint256]]
@@ -46,7 +64,7 @@
  - `AuctionSuccessful(kittyID [uint256], price [uint256], winner [address])`
  - `AuctionCancelled(kittyID [uint256])`
 
-# KittySires: [0xC7af99Fe5513eB6710e6D5f44F9989dA40F27F26](https://etherscan.io/address/0xC7af99Fe5513eB6710e6D5f44F9989dA40F27F26#code)
+# KittySires Contract: [0xC7af99Fe5513eB6710e6D5f44F9989dA40F27F26](https://etherscan.io/address/0xC7af99Fe5513eB6710e6D5f44F9989dA40F27F26#code)
 
 ### Calls/Reads
  - `getAuction(kittyID [uint256])`: returns [seller [address], startPrice [uint256], endPrice [uint256], duration [uint256], startTime [uint256]]
