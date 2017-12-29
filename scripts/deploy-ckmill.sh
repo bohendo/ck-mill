@@ -1,15 +1,15 @@
 #!/bin/bash
 
-image="`whoami`/ckmill_sync:latest"
+syncImage="`whoami`/ckmill_sync:latest"
+autobirtherImage="`whoami`/ckmill_autobirther:latest"
 
-docker pull $image
+docker pull $syncImage
+docker pull $autobirtherImage
 
 cat -> /tmp/docker-compose.yml <<EOF
 version: '3.4'
 
 secrets:
-  geth:
-    external: true
   postgres:
     external: true
 
@@ -23,8 +23,29 @@ networks:
 
 services:
 
+  autobirther:
+    image: $autobirtherImage
+    deploy:
+      mode: global
+    depends_on:
+      - postgres
+    secrets:
+      - postgres
+    environment:
+      - ETH_PROVIDER=/tmp/ipc/geth.ipc
+      - ETH_ADDRESS
+      - PGHOST=postgres
+      - PGPORT=5432
+      - PGUSER=ckmill
+      - PGDATABASE=ckmill
+      - PGPASSFILE=/run/secrets/postgres
+    volumes:
+      - ethprovider_ipc:/tmp/ipc
+    networks:
+      - back
+
   sync:
-    image: $image
+    image: $syncImage
     deploy:
       mode: global
     depends_on:

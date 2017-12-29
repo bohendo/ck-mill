@@ -1,4 +1,5 @@
 import { web3, core, sale, sire } from './eth/web3'
+import db from './db/'
 
 const handleBirth = (error, birth) => {
   if (error) {
