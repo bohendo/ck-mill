@@ -1,41 +1,96 @@
-import { ck } from './ethereum/geth'
+import { web3, core, sale, sire } from './eth/web3'
 
-// When this function returns, it will be executed again after a short delay
-const heartbeat = (n) => {
-  ck.core.totalSupply((err, max) => {
-    console.log(`There are ${max} cryptokitties in the world`)
-    var now = new Date().getTime()/1000
-    const kittyLoop = (i) => {
-      // Print something helpful
-      if (i > 0 && i % 10 === 0) {
-        let then = now
-        now = new Date().getTime()/1000
-        console.log(`Got kitties ${i-10}-${i} in ${now-then} seconds`)
+const handleBirth = (error, birth) => {
+  if (error) {
+    console.error(error)
+    return (1)
+  }
+
+  console.log(`handling birth from block ${birth.blockNumber}...`)
+
+  var dup = false
+  for (let i=0; i<birthed.length; i++) {
+    // if this is the most recent birth for this kitty...
+    if (birthed[i].kittyId === Number(birth.args.kittyId)) {
+      console.log(`dup kitty birth for ${birthed[i].kittyId}!`)
+      dup = true
+      if(birthed[i].block < Number(births.blockNumber)) {
+        birthed[i].block = Number(births.blockNumber)
       }
-      // Stop once we get to the last kitty
-      if (i > max) { return 'Done' } // replace artificial cap w max
-
-      let kitty = getKitty(i)
-      // save kitty in database..?
-
-      kittyLoop(i+1)
+      break
     }
-    kittyLoop(0)
-    console.log('loop skipped')
-  })
+  }
+  if (!dup) {
+    console.log(`new kitty birth for ${birth.args.kittyId}!`)
+    birthed.push({
+      kittyId: Number(birth.args.kittyId),
+      block: Number(birth.blockNumber),
+    })
+  }
+
+  for (let i=0; i<preg.length; i++) {
+    if (preg[i].kittyId === Number(birth.args.kittyId) && Number(birth.blockNumber) > preg[i].end) {
+      console.log(`Removing old pregnancy`)
+      preg.splice(i, 1) // removes 1 element from array at position i
+    }
+  }
+  console.log(`Done handling birth for ${birth.args.kittyId} from block ${birth.blockNumber}`)
+  return (0)
 }
 
-// Ensure this geth node never exits,
-// it should sync repeatedly instead
-(function stayalive(n, interval, fn) {
-  let now = new Date().getTime()/1000
+const handlePregnancy = (error, pregnancy) => {
+  if (error) {
+    console.error(error)
+    return (1)
+  }
 
-  heartbeat(n)
+  console.log(`handling pregnancy ${JSON.stringify(pregnancy.args)} from block ${pregnancy.blockNumber}...`)
 
-  let then = now
-  now = new Date().getTime()/1000
-  console.log(`heartbeat ${n} finished in ${now-then} seconds`)
-  admin.sleep(interval)
-  stayalive(n+1, interval, fn)
-}(1, 10, heartbeat))
+  // don't record this pregnancy if this kitty has already given birth
+  for (let i=0; i<birthed.length; i++) {
+    if (birthed[i].kittyId === Number(pregnancy.args.matronId)) {
+      if (birthed[i].block > Number(pregnancy.args.cooldownEndBlock)) {
+        console.log(`Not recording pregnancy, kitty ${pregnancy.args.matronId} already gave birth`)
+        return (0)
+      }
+    }
+  }
+
+  // don't record this pregnancy if it's older than one we already have
+  var dup = false
+  for (let i=0; i<preg.length; i++) {
+    if (preg[i].kittyId === Number(pregnancy.args.matronId)) {
+      console.log(`dup pregnancy detected for kitty ${pregnancy.args.matronId}`)
+      dup = true
+      if (preg[i].end < Number(pregnancy.blockNumber)) {
+        preg[i].start = Number(pregnancy.blockNumber)
+        preg[i].end = Number(pregnancy.args.cooldownEndBlock)
+      }
+      break
+    }
+  }
+
+  if (!dup) {
+    console.log(`new pregnancy detected for kitty ${pregnancy.args.matronId}`)
+    preg.push({
+      kittyId: Number(pregnancy.args.matronId),
+      start: Number(pregnancy.blockNumber),
+      end: Number(pregnancy.args.cooldownEndBlock)
+    })
+  }
+  console.log(`Done handling pregnancy for ${pregnancy.args.matronId} from block ${pregnancy.blockNumber}`)
+  return (0)
+}
+
+
+const toBlock = eth.getBlock('latest').number
+const fromBlock = toBlock - (4*60*24) // No need to look more than a week into the past
+
+// listen for current/future events
+//core.Pregnant(handlePregnancy)
+//core.Birth(handleBirth)
+
+// search for past events
+//core.Pregnant({ fromBlock, toBlock }, handlePregnancy)
+//core.Birth({ fromBlock, toBlock }, handleBirth)
 

@@ -6,11 +6,14 @@ module.exports = {
   target: 'node',
   externals: ['pg-native', 'electron'],
 
-  entry: './src/sync.js',
+  entry: {
+    autobirther: './src/autobirther.js',
+    sync: './src/sync.js',
+  },
 
   output: {
     path: path.join(__dirname, '../build'),
-    filename: 'sync.bundle.js',
+    filename: '[name].bundle.js',
   },
 
   resolve: {
@@ -34,4 +37,3 @@ module.exports = {
   },
 
 }
-

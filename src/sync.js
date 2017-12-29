@@ -1,5 +1,8 @@
-import { web3, ck } from './ethereum/web3'
+import { web3, core, sale, sire } from './eth/web3'
 import db from './db/'
+
+// To get contract instance from string eg 'core' w/out using global
+const ck = { core, sale, sire }
 
 // block at which cryptokitties was deployed
 const firstBlock = 4605167

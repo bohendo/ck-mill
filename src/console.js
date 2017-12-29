@@ -1,4 +1,4 @@
-import { core, sale, sire } from './ethereum/geth'
+import { core, sale, sire } from './eth/geth'
 
 // TODO: don't hardcode my kitties...
 // bg for breeding group 1
