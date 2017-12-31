@@ -12,13 +12,13 @@ const printq = true
 
 // Pause throttle milliseconds between recalling events from previous blocks
 // (Because geth can't stay synced if we relentlessly request data from it)
-const throttle = 500
+const throttle = 100
 
 const syncEvents = () => {
 
   web3.eth.getBlock('latest').then(res => {
 
-    let fromBlock = res.number
+    let fromBlock = Number(res.number)
     console.log(`Starting event watchers from block ${fromBlock}`)
 
     db.query(`CREATE TABLE IF NOT EXISTS Transfer (
@@ -83,11 +83,11 @@ const syncEvents = () => {
       if (contract === 'sale' || contract === 'sire') { table += contract }
       table += name
 
+      // pay attention to which ${} are strings that need to be enclosed in quotes eg '${}'
+      // and which are numbers that don't need single quotes eg ${}
       let q = `INSERT INTO ${table} VALUES ('${data.transactionHash}', 
         ${data.blockNumber}, `
 
-      // These two events return the same number of the same data types, how convenient
-      // pay attention to which ${} are strings that need to be enclosed in quotes eg '${}'
       if (name === 'AuctionCreated') {
         q += `${data.returnValues[0]}, ${data.returnValues[1]},
         ${data.returnValues[2]}, ${data.returnValues[3]});`
@@ -99,6 +99,7 @@ const syncEvents = () => {
       } else if (name === 'AuctionCancelled') {
         q += `${data.returnValues[0]});`
 
+      // These two events return the same number of the same data types, how convenient
       } else if (name === 'Transfer' || name === 'Approval') {
         q += `'${data.returnValues[0]}', '${data.returnValues[1]}',
         ${data.returnValues[2]});`
@@ -134,11 +135,20 @@ const syncEvents = () => {
       // i [int] remember past events from block number i
       // contract [string] will be one of 'core', 'sale', or 'sire'
       // name [string] of event to remember
+      var COUNT = 0
+      var OLDI = fromBlock
       const remember = (i, contract, name) => {
         if (i < firstBlock) return ('done')
 
+        if (COUNT > 25) {
+          console.log(`=== Found ${COUNT} ${name} events from ${contract} in blocks ${OLDI}-${i}`)
+          COUNT = 0
+          OLDI = i
+        }
+
         ck[contract].getPastEvents(name, { fromBlock: i, toBlock: i }, (err, pastEvents) => {
           if (err) { console.error(err); process.exit(1) }
+          COUNT += pastEvents.length
           pastEvents.forEach(data=>{ saveEvent(contract, name, data) })
 
           // give node a sec to clear the call stack & give geth a sec to stay synced
