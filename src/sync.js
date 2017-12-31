@@ -131,40 +131,22 @@ const syncEvents = () => {
         saveEvent(contract, name, data)
       })
 
-      let table = ''
-      if (contract === 'sale' || contract === 'sire') { table += contract }
-      table += name
+      // i [int] remember past events from block number i
+      // contract [string] will be one of 'core', 'sale', or 'sire'
+      // name [string] of event to remember
+      const remember = (i, contract, name) => {
+        if (i < firstBlock) return ('done')
 
-      db.query(`SELECT blockn FROM ${table} ORDER BY blockn;`).then(res=>{
-        // lobn for List Of Block Numbers
-        const lobn = res.rows.map(row => Number(row.blockn))
+        ck[contract].getPastEvents(name, { fromBlock: i, toBlock: i }, (err, pastEvents) => {
+          if (err) { console.error(err); process.exit(1) }
+          pastEvents.forEach(data=>{ saveEvent(contract, name, data) })
 
-        // i [int] remember past events from block number i
-        // contract [string] will be one of 'core', 'sale', or 'sire'
-        // name [string] of event to remember
-        const remember = (i, contract, name) => {
-          if (i < firstBlock) return ('done')
+          // give node a sec to clear the call stack & give geth a sec to stay synced
+          setTimeout(()=>{remember(i-1, contract, name)}, throttle)
+        })
+      }
 
-          if (lobn.includes(i)) {
-            // give node a sec to clear the call stack, no need to let geth stay synced
-            setTimeout(()=>{remember(i-1, contract, name)}, 1)
-
-          } else {
-            ck[contract].getPastEvents(name, { fromBlock: i, toBlock: i }, (err, pastEvents) => {
-              if (err) { console.error(err); process.exit(1) }
-              pastEvents.forEach(data=>{ saveEvent(contract, name, data) })
-
-              // give node a sec to clear the call stack & give geth a sec to stay synced
-              setTimeout(()=>{remember(i-1, contract, name)}, throttle)
-            })
-          }
-        }
-
-        remember(fromBlock, contract, name)
-
-      }).catch(console.error)
-
-
+      remember(fromBlock, contract, name)
     }
 
     sync(fromBlock, 'core', 'Transfer')
@@ -183,51 +165,41 @@ const syncEvents = () => {
  }
 
 const syncKitties = () => {
-    ck.core.methods.totalSupply().call((error,totalKitty) => {
-        if (error)
-        {
-            console.error(error);
-            return error;
-        }
-        console.log(`Total Supply = ${totalKitty}`)
-        db.query(`CREATE TABLE IF NOT EXISTS Kitties (
-            kittyId         BIGINT      PRIMARY KEY,
-            isPregnant      BOOLEAN     NOT NULL,
-            isReady         BOOLEAN     NOT NULL,
-            coolDownIndex   BIGINT      NOT NULL,
-            nextAuctionTime BIGINT      NOT NULL,
-            siringWith      BIGINT      NOT NULL,
-            birthTime       BIGINT      NOT NULL,
-            matronId        BIGINT      NOT NULL,
-            sireId          BIGINT      NOT NULL,
-            generation      BIGINT      NOT NULL,
-            genes           NUMERIC(78) NOT NULL);`)
+  ck.core.methods.totalSupply().call((error,totalKitty) => {
+    if (error)
+    {
+      console.error(error);
+      return error;
+    }
+    console.log(`Total Supply = ${totalKitty}`)
+    db.query(`CREATE TABLE IF NOT EXISTS Kitties (
+      kittyId         BIGINT      PRIMARY KEY,
+      isPregnant      BOOLEAN     NOT NULL,
+      isReady         BOOLEAN     NOT NULL,
+      coolDownIndex   BIGINT      NOT NULL,
+      nextAuctionTime BIGINT      NOT NULL,
+      siringWith      BIGINT      NOT NULL,
+      birthTime       BIGINT      NOT NULL,
+      matronId        BIGINT      NOT NULL,
+      sireId          BIGINT      NOT NULL,
+      generation      BIGINT      NOT NULL,
+      genes           NUMERIC(78) NOT NULL);`)
 
-        db.query(`Select kittyId from Kitties order by kittyid`).then(res => {
-            const ids = res.rows.map((row) => Number(row.kittyid))
-            const kittyLoop = (i) => {
-                if (i > totalKitty) return ('done')
-                if (!ids.includes(i)) {
-                    ck.core.methods.getKitty(i).call((error,kitty) => {
-                        if (error) { return (error) }
-
-                        let q = `INSERT INTO Kitties VALUES (${i}, ${kitty[0]}, ${kitty[1]}, ${kitty[2]}, ${kitty[3]}, ${kitty[4]}, ${kitty[5]}, ${kitty[6]}, ${kitty[7]}, ${kitty[8]}, ${kitty[9]});`
-
-                        db.query(q).then(res => {
-                            if (printq) { console.log(q) }
-                        }).catch(error =>{
-                            if (error.code !== '23505') { console.error(error) }
-                        })
-                        setTimeout(() => { kittyLoop(i+1) }, throttle/2);
-                    })
-                }
-                else {
-                    setTimeout(() => { kittyLoop(i+1) }, 1);
-                }
-            }
-            kittyLoop(1)
+    const kittyLoop = (i) => {
+      if (i > totalKitty) return ('done')
+      ck.core.methods.getKitty(i).call((error,kitty) => {
+        if (error) { return (error) }
+        let q = `INSERT INTO Kitties VALUES (${i}, ${kitty[0]}, ${kitty[1]}, ${kitty[2]}, ${kitty[3]}, ${kitty[4]}, ${kitty[5]}, ${kitty[6]}, ${kitty[7]}, ${kitty[8]}, ${kitty[9]});`
+        db.query(q).then(res => {
+          if (printq) { console.log(q) }
+        }).catch(error =>{
+          if (error.code !== '23505') { console.error(error) }
         })
-    })
+        setTimeout(() => { kittyLoop(i+1) }, throttle/2);
+      })
+    }
+    kittyLoop(1)
+  })
 }
 
 // Activate!
