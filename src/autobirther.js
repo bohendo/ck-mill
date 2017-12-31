@@ -1,97 +1,128 @@
 import { web3, core, sale, sire } from './eth/web3'
 import db from './db/'
 
-const handleBirth = (error, birth) => {
-  if (error) {
-    console.error(error)
-    return (1)
-  }
+////////////////////////////////////////
+// Global Variables
 
-  console.log(`handling birth from block ${birth.blockNumber}...`)
+// A day/week's worth of blocks
+const DAY = 4*60*24
+const WEEK = 4*60*24*7
 
-  var dup = false
-  for (let i=0; i<birthed.length; i++) {
-    // if this is the most recent birth for this kitty...
-    if (birthed[i].kittyId === Number(birth.args.kittyId)) {
-      console.log(`dup kitty birth for ${birthed[i].kittyId}!`)
-      dup = true
-      if(birthed[i].block < Number(births.blockNumber)) {
-        birthed[i].block = Number(births.blockNumber)
+// master list of duedates
+// duedates[i] = { block: 40123, due: [20456, 20789] }
+// if kitties 20456 and 20789 are due to give birth at block 40123
+const DUEDATES = []
+
+let TIME = new Date().getTime()/1000
+
+
+////////////////////////////////////////
+// Function Definitions
+
+const updateDueDates = (pregos, births) => {
+
+  console.log(`Analyzing ${pregos.length} pregnancies and ${births.length} births...`)
+
+  // for each pregnancy event, save the due date to our DUEDATE calendar
+  pregos.forEach(preg=>{
+    const cooldownend = Number(preg.cooldownend)
+    const matronid = Number(preg.matronid)
+
+    // find the entry in duedates for the cooldownend block
+    let isNew = true
+    for (let i=0; i<DUEDATES.length; i++) {
+      if (DUEDATES[i].block == cooldownend) {
+        isNew = false
+        // add this due date if we haven't already
+        if (!DUEDATES[i].due.includes(matronid)) {
+          DUEDATES[i].due.push(matronid)
+        }
+        break
       }
-      break
     }
-  }
-  if (!dup) {
-    console.log(`new kitty birth for ${birth.args.kittyId}!`)
-    birthed.push({
-      kittyId: Number(birth.args.kittyId),
-      block: Number(birth.blockNumber),
-    })
+    // no due dates for this block yet?
+    // add a square to our calendar and pencil in this kittyid
+    if (isNew) {
+      DUEDATES.push({ block: cooldownend, due: [matronid] })
+    }
+  })
+
+  // remove all due dates that have already resulted in a birth
+  births.forEach(birth=>{
+    const block = Number(birth.blockn)
+    const matronid = Number(birth.matronid)
+
+    // for all our due dates..
+    for (let i=0; i<DUEDATES.length; i++) {
+      // If this birth comes after a date at which this kitty was due..
+      if (DUEDATES[i] && DUEDATES[i].block < block && DUEDATES[i].due.includes(matronid)) {
+        // remove this due date
+        DUEDATES[i].due.splice(DUEDATES[i].due.indexOf(matronid), 1)
+      }
+      // If this due date is empty now, get rid of it
+      if (DUEDATES[i].due.length === 0) {
+        DUEDATES.splice(i, 1)
+      }
+    }
+  })
+
+  // Sort due dates so that most recent is on top
+  DUEDATES.sort((a,b) => { return a.block-b.block })
+
+  console.log('DUEDATES:')
+  for (let i=0; i<5; i++) {
+    console.log(`${JSON.stringify(DUEDATES[i])}`)
   }
 
-  for (let i=0; i<preg.length; i++) {
-    if (preg[i].kittyId === Number(birth.args.kittyId) && Number(birth.blockNumber) > preg[i].end) {
-      console.log(`Removing old pregnancy`)
-      preg.splice(i, 1) // removes 1 element from array at position i
-    }
-  }
-  console.log(`Done handling birth for ${birth.args.kittyId} from block ${birth.blockNumber}`)
-  return (0)
+  console.log(`Done updating due dates in ${TIME-new Date().getTime()/1000} seconds`)
 }
 
-const handlePregnancy = (error, pregnancy) => {
-  if (error) {
-    console.error(error)
-    return (1)
-  }
+////////////////////////////////////////
+// Execute
 
-  console.log(`handling pregnancy ${JSON.stringify(pregnancy.args)} from block ${pregnancy.blockNumber}...`)
+web3.eth.getBlock('latest').then(res=>{
 
-  // don't record this pregnancy if this kitty has already given birth
-  for (let i=0; i<birthed.length; i++) {
-    if (birthed[i].kittyId === Number(pregnancy.args.matronId)) {
-      if (birthed[i].block > Number(pregnancy.args.cooldownEndBlock)) {
-        console.log(`Not recording pregnancy, kitty ${pregnancy.args.matronId} already gave birth`)
-        return (0)
-      }
-    }
-  }
+  const latest = Number(res.number)
 
-  // don't record this pregnancy if it's older than one we already have
-  var dup = false
-  for (let i=0; i<preg.length; i++) {
-    if (preg[i].kittyId === Number(pregnancy.args.matronId)) {
-      console.log(`dup pregnancy detected for kitty ${pregnancy.args.matronId}`)
-      dup = true
-      if (preg[i].end < Number(pregnancy.blockNumber)) {
-        preg[i].start = Number(pregnancy.blockNumber)
-        preg[i].end = Number(pregnancy.args.cooldownEndBlock)
-      }
-      break
-    }
-  }
+  // get all pregnancy events with most recent first
+  const preg_query = `
+    SELECT matronid,blockn,cooldownend
+    FROM pregnant
+    WHERE blockn > ${latest-WEEK}
+    ORDER BY blockn DESC;`
 
-  if (!dup) {
-    console.log(`new pregnancy detected for kitty ${pregnancy.args.matronId}`)
-    preg.push({
-      kittyId: Number(pregnancy.args.matronId),
-      start: Number(pregnancy.blockNumber),
-      end: Number(pregnancy.args.cooldownEndBlock)
+  // get only the most recent birth for each kitty
+  const birth_query = `
+    SELECT DISTINCT ON (matronid) matronid,blockn
+    FROM birth
+    WHERE blockn > ${latest-WEEK}
+    ORDER BY matronid DESC, blockn DESC;`
+
+  db.query(preg_query).then(pregos => {
+    // pregos.rows[i] = { matronid: 123, blockn: 460, cooldownend: 464 }
+    // if we got a pregnant event for kitty 123 at block 460
+    // and it'll be ready to give birth at block 464
+
+    db.query(birth_query).then(births => {
+      // births.rows[i] = { kittyid: 12345, blockn: 46400 }
+      // if we got a birth event for kitty 12345 at block 46400
+
+
+      updateDueDates(pregos.rows, births.rows)
+
+
+    }).catch((error) => {
+      console.error(birth_query, error)
+      process.exit(1)
     })
-  }
-  console.log(`Done handling pregnancy for ${pregnancy.args.matronId} from block ${pregnancy.blockNumber}`)
-  return (0)
-}
+
+  }).catch((error) => {
+    console.error(preg_query, error)
+    process.exit(1)
+  })
 
 
-const toBlock = eth.getBlock('latest').number
-const fromBlock = toBlock - (4*60*24) // No need to look more than a week into the past
-
-// listen for current/future events
-//core.Pregnant(handlePregnancy)
-//core.Birth(handleBirth)
-
-// search for past events
-//core.Pregnant({ fromBlock, toBlock }, handlePregnancy)
-//core.Birth({ fromBlock, toBlock }, handleBirth)
-
+}).catch((error) => {
+  console.error('web3.eth.getBlock error:', error)
+  process.exit(1)
+})
