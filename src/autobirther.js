@@ -15,7 +15,6 @@ const DUEDATES = []
 
 let TIME = new Date().getTime()/1000
 
-
 ////////////////////////////////////////
 // Function Definitions
 
@@ -83,6 +82,7 @@ const updateDueDates = (pregos, births) => {
 web3.eth.getBlock('latest').then(res=>{
 
   const latest = Number(res.number)
+  console.log(`Starting from latest block: ${latest}`)
 
   // get all pregnancy events with most recent first
   const preg_query = `

@@ -210,7 +210,14 @@ const syncKitties = () => {
         db.query(q).then(res => {
           if (printq) { console.log(q) }
         }).catch(error =>{
-          if (error.code !== '23505') { console.error(error) }
+          if (error.code !== '23505') { console.error(q, error) }
+          // update kitty if inserting caused a duplicate key error
+          let q = `UPDATE Kitties
+            SET ispregnant=${kitty[0]}, isready=${kitty[1]}, cooldownindex=${kitty[2]}, nextauctiontime=${kitty[3]}, siringwith=${kitty[4]}
+            WHERE kittyid = ${i};`
+          db.query(q).then(res => {
+            if (printq) { console.log(q) }
+          }).catch(error =>{ console.error(q, error) })
         })
         kitty = null // get garbage collected!
         setTimeout(() => { kittyLoop(i+1) }, throttle/2);
