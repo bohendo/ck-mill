@@ -133,8 +133,10 @@ const syncEvents = (ck, firstBlock, throttle) => {
 
         // log a chunk of our progress
         if (COUNT > 250) {
+
           console.log(`=== Found ${COUNT} ${name} events from ${contract} in blocks ${
-          OLDI}-${i} (${Math.round(15*(fromBlock-i)/60/60)} hours ago)`)
+            OLDI}-${i} (${Math.round(15*(fromBlock-i)/60/60)} hours ago)`)
+
           COUNT = 0
           OLDI = i
         }

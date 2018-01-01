@@ -1,6 +1,8 @@
 import { web3, core, sale, sire } from '../eth/web3'
 import db from '../db/'
 
+var START = new Date().getTime()/1000
+
 const syncKitties = (ck, firstBlock, throttle) => {
 
   ck.core.methods.totalSupply().call().then(totalKitty => {
@@ -60,7 +62,13 @@ const syncKitties = (ck, firstBlock, throttle) => {
 
         // log a chunk of our progress
         if (COUNT == 25) {
-          console.log(`=== Synced kitties to ${id} (${Math.round(id/totalKitty*100)}% complete)`)
+
+          console.log(`=== Synced kitties to ${id} (${
+            Math.round(id/totalKitty*100)
+          }% complete in ${
+            Math.round(((new Date().getTime()/1000)-START)/60)
+          } minutes)`)
+
           COUNT = 0
           OLDI = id
         }
