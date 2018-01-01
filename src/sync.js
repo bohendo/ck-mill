@@ -7,12 +7,9 @@ const ck = { core, sale, sire }
 // block at which cryptokitties was deployed
 const firstBlock = 4605167
 
-// noisy yet useful
-const printq = true
-
 // Pause throttle milliseconds between recalling events from previous blocks
 // (Because geth can't stay synced if we relentlessly request data from it)
-const throttle = 100
+const throttle = 250
 
 const syncEvents = () => {
 
@@ -115,7 +112,8 @@ const syncEvents = () => {
       }
 
       db.query(q).then(res=>{
-        if (printq) { console.log(q) }
+        data = null // get garbage collected!
+        console.log(q)
       }).catch(error=>{
         // I'll let postgres quietly sort out my duplicate queries for me
         if (error.code !== '23505') { console.error(error) }
@@ -130,7 +128,6 @@ const syncEvents = () => {
       ck[contract].events[name]({ fromBlock }, (err, data) => {
         if (err) { console.error(err); process.exit(1) }
         saveEvent(contract, name, data)
-        data = null // get garbage collected!
       })
 
       // i [int] remember past events from block number i
@@ -145,7 +142,7 @@ const syncEvents = () => {
         }
 
         // log a chunk of our progress
-        if (COUNT > 100) {
+        if (COUNT > 250) {
           console.log(`=== Found ${COUNT} ${name} events from ${contract} in blocks ${
           OLDI}-${i} (${Math.round(15*(fromBlock-i)/60/60)} hours ago)`)
           COUNT = 0
@@ -156,10 +153,12 @@ const syncEvents = () => {
           if (err) { console.error(err); process.exit(1) }
           COUNT += pastEvents.length
           pastEvents.forEach(data=>{ saveEvent(contract, name, data) })
-          pastEvents = null // get garbage collected!
 
           // give node a sec to clear the call stack & give geth a sec to stay synced
-          setTimeout(()=>{remember(i-1, contract, name)}, throttle)
+          setTimeout(()=>{
+            pastEvents = null // get garbage collected!
+            remember(i-1, contract, name)
+          }, throttle)
         })
       }
 
@@ -179,9 +178,10 @@ const syncEvents = () => {
     sync(fromBlock, 'sire', 'AuctionSuccessful')
     sync(fromBlock, 'sire', 'AuctionCancelled')
   })
- }
+}
 
 const syncKitties = () => {
+
   ck.core.methods.totalSupply().call((error,totalKitty) => {
     if (error)
     {
@@ -202,25 +202,62 @@ const syncKitties = () => {
       generation      BIGINT      NOT NULL,
       genes           NUMERIC(78) NOT NULL);`)
 
+
+    // save new kitties when we detect a birth event!
+    /*
+    web3.eth.getBlock('latest').then((err, res) => {
+      const latest = Number(res.number)
+      ck.core.events.Birth({ fromBlock: latest }, (err, birth) => {
+        if (err) { console.error(err); process.exit(1) }
+        let kittyid = Number(birth.returnValues[1])
+        ck.core.getKitty(birth.returnValues[1]).then((err, kitty) => {
+          saveKitty(kitty)
+        }).catch(console.error)
+      })
+    }).catch(console.error)
+    */
+
+
+    // kitty = [ispregnant, isready, cooldownindex, nextactiontime, siringwith, birthtime, matronid, sireid, generation, genes]
+    const saveKitty = (id, kitty) => {
+      let q = `INSERT INTO Kitties VALUES (${id}, ${kitty[0]}, ${kitty[1]}, ${kitty[2]}, ${kitty[3]}, ${kitty[4]}, ${kitty[5]}, ${kitty[6]}, ${kitty[7]}, ${kitty[8]}, ${kitty[9]});`
+      db.query(q).then(res => {
+        console.log(q)
+      }).catch(error =>{
+        if (error.code !== '23505') { console.error(q, error) }
+        // update kitty if inserting caused a duplicate key error
+        let q = `UPDATE Kitties SET ispregnant=${kitty[0]}, isready=${kitty[1]}, cooldownindex=${kitty[2]}, nextauctiontime=${kitty[3]}, siringwith=${kitty[4]} WHERE kittyid = ${id};`
+        db.query(q).then(res => {
+          COUNT += 1
+          kitty = null // get garbage collected!
+        }).catch(error =>{ console.error(q, error) })
+      })
+    }
+
+    var COUNT = 0
+    var OLDI = 1
     const kittyLoop = (i) => {
-      if (i > totalKitty) return ('done')
+      if (i > totalKitty) {
+        console.log(`===== Done syncing kitties!`)
+        return ('done')
+      }
+
       ck.core.methods.getKitty(i).call((error,kitty) => {
         if (error) { return (error) }
-        let q = `INSERT INTO Kitties VALUES (${i}, ${kitty[0]}, ${kitty[1]}, ${kitty[2]}, ${kitty[3]}, ${kitty[4]}, ${kitty[5]}, ${kitty[6]}, ${kitty[7]}, ${kitty[8]}, ${kitty[9]});`
-        db.query(q).then(res => {
-          if (printq) { console.log(q) }
-        }).catch(error =>{
-          if (error.code !== '23505') { console.error(q, error) }
-          // update kitty if inserting caused a duplicate key error
-          let q = `UPDATE Kitties
-            SET ispregnant=${kitty[0]}, isready=${kitty[1]}, cooldownindex=${kitty[2]}, nextauctiontime=${kitty[3]}, siringwith=${kitty[4]}
-            WHERE kittyid = ${i};`
-          db.query(q).then(res => {
-            if (printq) { console.log(q) }
-          }).catch(error =>{ console.error(q, error) })
-        })
-        kitty = null // get garbage collected!
-        setTimeout(() => { kittyLoop(i+1) }, throttle/2);
+
+        // log a chunk of our progress
+        if (COUNT == 25) {
+          console.log(`=== Synced kitties to ${i} (${Math.round(i/totalKitty*100)}% complete)`)
+          COUNT = 0
+          OLDI = i
+        }
+
+        saveKitty(i, kitty)
+
+        setTimeout(() => {
+          kittyLoop(i+1)
+        }, throttle);
+
       })
     }
     kittyLoop(1)
