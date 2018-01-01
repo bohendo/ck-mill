@@ -59,7 +59,7 @@ const updateDueDates = (pregos, births) => {
     // for all our due dates..
     for (let i=0; i<DUEDATES.length; i++) {
       // If this birth comes after a date at which this kitty was due..
-      if (DUEDATES[i] && DUEDATES[i].block < block && DUEDATES[i].due.includes(matronid)) {
+      if (DUEDATES[i] && DUEDATES[i].block <= block && DUEDATES[i].due.includes(matronid)) {
         // remove this due date
         DUEDATES[i].due.splice(DUEDATES[i].due.indexOf(matronid), 1)
       }
@@ -78,48 +78,57 @@ const updateDueDates = (pregos, births) => {
     console.log(`${JSON.stringify(DUEDATES[i])}`)
   }
 
-  console.log(`Done updating due dates in ${TIME-new Date().getTime()/1000} seconds`)
 }
 
-////////////////////////////////////////
-// Execute
+const initializeDueDates = (callback) => {
+  web3.eth.getBlock('latest').then(res=>{
 
-web3.eth.getBlock('latest').then(res=>{
+    const latest = Number(res.number)
+    console.log(`Starting from latest block: ${latest}`)
 
-  const latest = Number(res.number)
-  console.log(`Starting from latest block: ${latest}`)
+    // get all pregnancy events from the last week with most recent first
+    const preg_query = `
+      SELECT matronid,blockn,cooldownend
+      FROM pregnant
+      WHERE blockn > ${latest-WEEK-1}
+      ORDER BY blockn DESC;`
 
-  // get all pregnancy events with most recent first
-  const preg_query = `
-    SELECT matronid,blockn,cooldownend
-    FROM pregnant
-    WHERE blockn > ${latest-WEEK}
-    ORDER BY blockn DESC;`
+    // get only the most recent birth for each kitty this week
+    const birth_query = `
+      SELECT DISTINCT ON (matronid) matronid,blockn
+      FROM birth
+      WHERE blockn > ${latest-WEEK-1}
+      ORDER BY matronid DESC, blockn DESC;`
 
-  // get only the most recent birth for each kitty
-  const birth_query = `
-    SELECT DISTINCT ON (matronid) matronid,blockn
-    FROM birth
-    WHERE blockn > ${latest-WEEK}
-    ORDER BY matronid DESC, blockn DESC;`
+    db.query(preg_query).then(pregos => {
 
-  db.query(preg_query).then(pregos => {
+      db.query(birth_query).then(births => {
 
-    db.query(birth_query).then(births => {
+        updateDueDates(pregos.rows, births.rows)
+        console.log(`Done initializing due dates in ${(new Date().getTime()/1000)-TIME} seconds`)
+        callback()
 
-      updateDueDates(pregos.rows, births.rows)
+      }).catch((error) => {
+        console.error(birth_query, error)
+        process.exit(1)
+      })
 
     }).catch((error) => {
-      console.error(birth_query, error)
+      console.error(preg_query, error)
       process.exit(1)
     })
 
   }).catch((error) => {
-    console.error(preg_query, error)
+    console.error('web3.eth.getBlock error:', error)
     process.exit(1)
   })
+}
 
-}).catch((error) => {
-  console.error('web3.eth.getBlock error:', error)
-  process.exit(1)
-})
+const heartbeat = () => {
+  console.log('thump thump')
+}
+
+////////////////////////////////////////
+// Execute
+initializeDueDates(heartbeat)
+
