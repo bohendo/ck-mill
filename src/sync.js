@@ -1,10 +1,6 @@
 import { web3, core, sale, sire } from './eth/web3'
 import db from './db/'
 
-// this script is a memory hog, needs more than default of 1.4GB mem
-import v8 from 'v8'
-v8.setFlagsFromString('--max_old_space_size=4096');
-
 // To get contract instance from string eg 'core' w/out using global
 const ck = { core, sale, sire }
 
@@ -134,6 +130,7 @@ const syncEvents = () => {
       ck[contract].events[name]({ fromBlock }, (err, data) => {
         if (err) { console.error(err); process.exit(1) }
         saveEvent(contract, name, data)
+        data = null // get garbage collected!
       })
 
       // i [int] remember past events from block number i
@@ -159,6 +156,7 @@ const syncEvents = () => {
           if (err) { console.error(err); process.exit(1) }
           COUNT += pastEvents.length
           pastEvents.forEach(data=>{ saveEvent(contract, name, data) })
+          pastEvents = null // get garbage collected!
 
           // give node a sec to clear the call stack & give geth a sec to stay synced
           setTimeout(()=>{remember(i-1, contract, name)}, throttle)
@@ -214,6 +212,7 @@ const syncKitties = () => {
         }).catch(error =>{
           if (error.code !== '23505') { console.error(error) }
         })
+        kitty = null // get garbage collected!
         setTimeout(() => { kittyLoop(i+1) }, throttle/2);
       })
     }
