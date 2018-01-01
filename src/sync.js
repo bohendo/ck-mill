@@ -1,8 +1,8 @@
-import { web3, core, sale, sire } from './eth/web3'
+import {core, sale, sire } from './eth/web3'
 import db from './db/'
 
 import syncKitties from './sync/kitties'
-import syncEvents from './sync/kitties'
+import syncEvents from './sync/events'
 
 // To get contract instance from string eg 'core' w/out using global
 const ck = { core, sale, sire }
@@ -17,4 +17,3 @@ const throttle = 250
 // Activate!
 syncKitties(ck, firstBlock, throttle)
 syncEvents(ck, firstBlock, throttle)
-

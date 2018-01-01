@@ -170,4 +170,4 @@ const syncEvents = (ck, firstBlock, throttle) => {
   })
 }
 
-export default syncEvents
+export default syncEvents;

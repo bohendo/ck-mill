@@ -3,13 +3,10 @@ import db from '../db/'
 
 const syncKitties = (ck, firstBlock, throttle) => {
 
-  ck.core.methods.totalSupply().call().then((error,totalKitty) => {
-    if (error)
-    {
-      console.error(error);
-      return error;
-    }
-    console.log(`Total Supply = ${totalKitty}`)
+  ck.core.methods.totalSupply().call().then(totalKitty => {
+
+    console.log(`Total supply = ${totalKitty} kitties`)
+
     db.query(`CREATE TABLE IF NOT EXISTS Kitties (
       kittyId         BIGINT      PRIMARY KEY,
       isPregnant      BOOLEAN     NOT NULL,
@@ -45,34 +42,33 @@ const syncKitties = (ck, firstBlock, throttle) => {
       ck.core.events.Birth({ fromBlock: latest }, (err, birth) => {
         if (err) { console.error(err); process.exit(1) }
         let id = Number(birth.returnValues[1])
-        ck.core.methods.getKitty(id).call().then((err, kitty) => {
+        ck.core.methods.getKitty(id).call().then(kitty => {
           saveKitty(id, kitty)
         }).catch(console.error)
       })
     }).catch(console.error)
 
-    var COUNT = 0
+    var COUNT = 1
     var OLDI = 1
-    const kittyLoop = (i) => {
-      if (i > totalKitty) {
+    const kittyLoop = (id) => {
+      if (id > totalKitty) {
         console.log(`===== Done syncing kitties!`)
         return ('done')
       }
 
-      ck.core.methods.getKitty(i).call().then((error,kitty) => {
-        if (error) { return (error) }
+      ck.core.methods.getKitty(id).call().then(kitty => {
 
         // log a chunk of our progress
         if (COUNT == 25) {
-          console.log(`=== Synced kitties to ${i} (${Math.round(i/totalKitty*100)}% complete)`)
+          console.log(`=== Synced kitties to ${id} (${Math.round(id/totalKitty*100)}% complete)`)
           COUNT = 0
-          OLDI = i
+          OLDI = id
         }
 
-        saveKitty(i, kitty)
+        saveKitty(id, kitty)
 
         setTimeout(() => {
-          kittyLoop(i+1)
+          kittyLoop(id+1)
         }, throttle);
 
       })
@@ -81,4 +77,4 @@ const syncKitties = (ck, firstBlock, throttle) => {
   })
 }
 
-export default syncKitties
+export default syncKitties;

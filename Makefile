@@ -29,15 +29,15 @@ deploy: console-image sync-image autobirther-image
 	docker push $(me)/ckmill_sync:$v
 	docker push $(me)/ckmill_autobirther:$v
 
-build/console: console-image
+console: console-image
 	docker push $(me)/ckmill_console:$v
 	touch build/console
 
-build/sync: sync-image
+sync: sync-image
 	docker push $(me)/ckmill_sync:$v
 	touch build/sync
 
-build/autobirther: autobirther-image
+autobirther: autobirther-image
 	docker push $(me)/ckmill_autobirther:$v
 	touch build/autobirther
 
