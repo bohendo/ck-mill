@@ -12,8 +12,8 @@ const firstBlock = 4605167
 
 // Pause throttle milliseconds between recalling events from previous blocks
 // (Because geth can't stay synced if we relentlessly request data from it)
-const throttle = 250
+const throttle = 200
 
 // Activate!
-syncKitties(ck, firstBlock, throttle/2)
-//syncEvents(ck, firstBlock, throttle)
+syncKitties(ck, firstBlock, throttle)
+syncEvents(ck, firstBlock, throttle)

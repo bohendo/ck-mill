@@ -63,7 +63,7 @@ const syncKitties = (ck, firstBlock, throttle) => {
 
     var COUNT = 1
     const kittyLoop = (id) => {
-      if (id > totalKitty) {
+      if (id < 0) {
         console.log(`===== Done syncing kitties!`)
         return ('done')
       }
@@ -72,8 +72,8 @@ const syncKitties = (ck, firstBlock, throttle) => {
 
         // log a chunk of our progress
         if (COUNT > 25) {
-          console.log(`=== Synced kitties to ${id} (${
-            Math.round(id/totalKitty*100)
+          console.log(`=== Synced kitties higher than ${id} (${
+            Math.round((totalKitty-id)/totalKitty*100)
           }% complete in ${
             Math.round(((new Date().getTime()/1000)-START)/60)
           } minutes)`)
@@ -81,15 +81,15 @@ const syncKitties = (ck, firstBlock, throttle) => {
         }
 
         saveKitty(id, kitty)
-        setTimeout(() => { kittyLoop(id+1) }, throttle);
+        setTimeout(() => { kittyLoop(id-1) }, throttle);
 
       }).catch((error)=>{
         console.error(`Error getting old kitty ${id}: ${JSON.stringify(error)}`)
         // we still want to move on and sync the next kitty if this one fails
-        setTimeout(() => { kittyLoop(id+1) }, throttle);
+        setTimeout(() => { kittyLoop(id-1) }, throttle);
       })
     }
-    kittyLoop(1)
+    kittyLoop(totalKitty)
   })
 }
 
