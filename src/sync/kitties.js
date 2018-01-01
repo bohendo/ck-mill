@@ -26,7 +26,6 @@ const syncKitties = (ck, firstBlock, throttle) => {
     const saveKitty = (id, kitty) => {
       let q = `INSERT INTO Kitties VALUES (${id}, ${kitty[0]}, ${kitty[1]}, ${kitty[2]}, ${kitty[3]}, ${kitty[4]}, ${kitty[5]}, ${kitty[6]}, ${kitty[7]}, ${kitty[8]}, ${kitty[9]});`
       db.query(q).then(res => {
-        console.log(q)
         COUNT += 1
         kitty = null // get garbage collected!
       }).catch(error =>{
@@ -53,6 +52,7 @@ const syncKitties = (ck, firstBlock, throttle) => {
 
         ck.core.methods.getKitty(id).call().then(kitty => {
           saveKitty(id, kitty)
+          console.log(`= Saved kitty ${id} born on block ${birth.blockNumber}`)
         }).catch((error)=>{
           console.error(`Error getting new kitty ${id}: ${JSON.stringify(error)}`)
         })
@@ -64,15 +64,15 @@ const syncKitties = (ck, firstBlock, throttle) => {
     var COUNT = 1
     const kittyLoop = (id) => {
       if (id < 0) {
-        console.log(`===== Done syncing kitties!`)
+        console.log(`=== Done syncing kitties!`)
         return ('done')
       }
 
       ck.core.methods.getKitty(id).call().then(kitty => {
 
         // log a chunk of our progress
-        if (COUNT > 25) {
-          console.log(`=== Synced kitties higher than ${id} (${
+        if (COUNT > 100) {
+          console.log(`Synced all kitties over ${id} (${
             Math.round((totalKitty-id)/totalKitty*100)
           }% complete in ${
             Math.round(((new Date().getTime()/1000)-START)/60)

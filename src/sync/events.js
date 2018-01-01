@@ -5,7 +5,7 @@ const syncEvents = (ck, firstBlock, throttle) => {
 
   web3.eth.getBlock('latest').then(res => {
 
-    let fromBlock = Number(res.number)
+    var fromBlock = Number(res.number)
     console.log(`Starting event watchers from block ${fromBlock}`)
 
     db.query(`CREATE TABLE IF NOT EXISTS Transfer (
@@ -72,38 +72,24 @@ const syncEvents = (ck, firstBlock, throttle) => {
 
       // pay attention to which ${} are strings that need to be enclosed in quotes eg '${}'
       // and which are numbers that don't need single quotes eg ${}
-      let q = `INSERT INTO ${table} VALUES ('${data.transactionHash}', 
-        ${data.blockNumber}, `
-
+      let q = `INSERT INTO ${table} VALUES ('${data.transactionHash}', ${data.blockNumber}, ` 
       if (name === 'AuctionCreated') {
-        q += `${data.returnValues[0]}, ${data.returnValues[1]},
-        ${data.returnValues[2]}, ${data.returnValues[3]});`
-
+        q += `${data.returnValues[0]}, ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]});`
       } else if (name === 'AuctionSuccessful') {
-        q += `${data.returnValues[0]}, ${data.returnValues[1]},
-        '${data.returnValues[2]}');`
-
+        q += `${data.returnValues[0]}, ${data.returnValues[1]}, '${data.returnValues[2]}');`
       } else if (name === 'AuctionCancelled') {
         q += `${data.returnValues[0]});`
-
       // These two events return the same number of the same data types, how convenient
       } else if (name === 'Transfer' || name === 'Approval') {
-        q += `'${data.returnValues[0]}', '${data.returnValues[1]}',
-        ${data.returnValues[2]});`
-
+        q += `'${data.returnValues[0]}', '${data.returnValues[1]}', ${data.returnValues[2]});`
       } else if (name === 'Birth') {
-        q += `'${data.returnValues[0]}',
-        ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]},
-        ${data.returnValues[4]});`
-
+        q += `'${data.returnValues[0]}', ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]}, ${data.returnValues[4]});`
       } else if (name === 'Pregnant') {
-        q += `'${data.returnValues[0]}',
-        ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]});`
+        q += `'${data.returnValues[0]}', ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]});`
       }
 
       db.query(q).then(res=>{
         data = null // get garbage collected!
-        console.log(q)
       }).catch(error=>{
         // I'll let postgres quietly sort out my duplicate queries for me
         if (error.code !== '23505') { console.error(error) }
@@ -114,36 +100,44 @@ const syncEvents = (ck, firstBlock, throttle) => {
     // contract [string] will be one of 'core', 'sale', or 'sire'
     // name [string] of event to listen for
     const sync = (fromBlock, contract, name) => {
+
+      // some variables used to keep track of stats worth logging
+      var NEW = 0
+      var OLD = 0
+      var FROMI = fromBlock
+
       // get current/future events
       ck[contract].events[name]({ fromBlock }, (err, data) => {
         if (err) { console.error(err); process.exit(1) }
         saveEvent(contract, name, data)
+        fromBlock = Number(data.blockNumber)
+        NEW += 1
       })
 
       // i [int] remember past events from block number i
       // contract [string] will be one of 'core', 'sale', or 'sire'
       // name [string] of event to remember
-      var COUNT = 0
-      var OLDI = fromBlock
       const remember = (i, contract, name) => {
         if (i < firstBlock) {
-          console.log(`Finished syncing ${name} events from ${contract}`)
+          console.log(`=== Finished syncing ${name} events from ${contract}`)
           return('done')
         }
 
         // log a chunk of our progress
-        if (COUNT > 250) {
-
-          console.log(`=== Found ${COUNT} ${name} events from ${contract} in blocks ${
-            OLDI}-${i} (${Math.round(15*(fromBlock-i)/60/60)} hours ago)`)
-
-          COUNT = 0
-          OLDI = i
+        if (OLD > 250) {
+          console.log(`Found ${OLD} old ${name} events from ${contract} in blocks ${
+            FROMI}-${i} (${Math.round(15*(fromBlock-i)/60/60)} hours ago)`)
+          OLD = 0
+          FROMI = i
+        }
+        if (NEW > 10) {
+          console.log(`= Disovered ${NEW} new ${name} events from ${contract} around ${fromBlock} <--- most recent block`)
+          NEW = 0
         }
 
         ck[contract].getPastEvents(name, { fromBlock: i, toBlock: i }, (err, pastEvents) => {
           if (err) { console.error(err); process.exit(1) }
-          COUNT += pastEvents.length
+          OLD += pastEvents.length
           pastEvents.forEach(data=>{ saveEvent(contract, name, data) })
 
           // give node a sec to clear the call stack & give geth a sec to stay synced
