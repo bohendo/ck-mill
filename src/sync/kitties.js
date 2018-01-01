@@ -51,7 +51,6 @@ const syncKitties = (ck, firstBlock, throttle) => {
     }).catch(console.error)
 
     var COUNT = 1
-    var OLDI = 1
     const kittyLoop = (id) => {
       if (id > totalKitty) {
         console.log(`===== Done syncing kitties!`)
@@ -70,7 +69,6 @@ const syncKitties = (ck, firstBlock, throttle) => {
           } minutes)`)
 
           COUNT = 0
-          OLDI = id
         }
 
         saveKitty(id, kitty)

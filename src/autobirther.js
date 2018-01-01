@@ -18,6 +18,11 @@ let TIME = new Date().getTime()/1000
 ////////////////////////////////////////
 // Function Definitions
 
+// pregos[i] = { matronid: 123, blockn: 460, cooldownend: 464 }
+// if we got a pregnant event for kitty 123 at block 460
+// and it'll be ready to give birth at block 464
+// births[i] = { kittyid: 12345, blockn: 46400 }
+// if we got a birth event for kitty 12345 at block 46400
 const updateDueDates = (pregos, births) => {
 
   console.log(`Analyzing ${pregos.length} pregnancies and ${births.length} births...`)
@@ -69,7 +74,7 @@ const updateDueDates = (pregos, births) => {
   DUEDATES.sort((a,b) => { return a.block-b.block })
 
   console.log('DUEDATES:')
-  for (let i=0; i<5; i++) {
+  for (let i=0; i<15; i++) {
     console.log(`${JSON.stringify(DUEDATES[i])}`)
   }
 
@@ -99,17 +104,10 @@ web3.eth.getBlock('latest').then(res=>{
     ORDER BY matronid DESC, blockn DESC;`
 
   db.query(preg_query).then(pregos => {
-    // pregos.rows[i] = { matronid: 123, blockn: 460, cooldownend: 464 }
-    // if we got a pregnant event for kitty 123 at block 460
-    // and it'll be ready to give birth at block 464
 
     db.query(birth_query).then(births => {
-      // births.rows[i] = { kittyid: 12345, blockn: 46400 }
-      // if we got a birth event for kitty 12345 at block 46400
-
 
       updateDueDates(pregos.rows, births.rows)
-
 
     }).catch((error) => {
       console.error(birth_query, error)
@@ -120,7 +118,6 @@ web3.eth.getBlock('latest').then(res=>{
     console.error(preg_query, error)
     process.exit(1)
   })
-
 
 }).catch((error) => {
   console.error('web3.eth.getBlock error:', error)
