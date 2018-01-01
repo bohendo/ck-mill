@@ -15,5 +15,5 @@ const firstBlock = 4605167
 const throttle = 250
 
 // Activate!
-syncKitties(ck, firstBlock, throttle)
-syncEvents(ck, firstBlock, throttle)
+syncKitties(ck, firstBlock, throttle/2)
+//syncEvents(ck, firstBlock, throttle)

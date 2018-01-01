@@ -27,6 +27,8 @@ const syncKitties = (ck, firstBlock, throttle) => {
       let q = `INSERT INTO Kitties VALUES (${id}, ${kitty[0]}, ${kitty[1]}, ${kitty[2]}, ${kitty[3]}, ${kitty[4]}, ${kitty[5]}, ${kitty[6]}, ${kitty[7]}, ${kitty[8]}, ${kitty[9]});`
       db.query(q).then(res => {
         console.log(q)
+        COUNT += 1
+        kitty = null // get garbage collected!
       }).catch(error =>{
         if (error.code !== '23505') { console.error(q, error) }
         // update kitty if inserting caused a duplicate key error
@@ -34,20 +36,29 @@ const syncKitties = (ck, firstBlock, throttle) => {
         db.query(q).then(res => {
           COUNT += 1
           kitty = null // get garbage collected!
-        }).catch(error =>{ console.error(q, error) })
+        }).catch(error => {
+          console.error(q, error)
+        })
       })
     }
 
     // save new kitties when we detect a birth event!
     web3.eth.getBlock('latest').then(res => {
       const latest = Number(res.number)
+
+      // start event listener
       ck.core.events.Birth({ fromBlock: latest }, (err, birth) => {
         if (err) { console.error(err); process.exit(1) }
         let id = Number(birth.returnValues[1])
+
         ck.core.methods.getKitty(id).call().then(kitty => {
           saveKitty(id, kitty)
-        }).catch(console.error)
+        }).catch((error)=>{
+          console.error(`Error getting new kitty ${id}: ${JSON.stringify(error)}`)
+        })
+
       })
+
     }).catch(console.error)
 
     var COUNT = 1
@@ -60,23 +71,22 @@ const syncKitties = (ck, firstBlock, throttle) => {
       ck.core.methods.getKitty(id).call().then(kitty => {
 
         // log a chunk of our progress
-        if (COUNT == 25) {
-
+        if (COUNT > 25) {
           console.log(`=== Synced kitties to ${id} (${
             Math.round(id/totalKitty*100)
           }% complete in ${
             Math.round(((new Date().getTime()/1000)-START)/60)
           } minutes)`)
-
           COUNT = 0
         }
 
         saveKitty(id, kitty)
+        setTimeout(() => { kittyLoop(id+1) }, throttle);
 
-        setTimeout(() => {
-          kittyLoop(id+1)
-        }, throttle);
-
+      }).catch((error)=>{
+        console.error(`Error getting old kitty ${id}: ${JSON.stringify(error)}`)
+        // we still want to move on and sync the next kitty if this one fails
+        setTimeout(() => { kittyLoop(id+1) }, throttle);
       })
     }
     kittyLoop(1)
