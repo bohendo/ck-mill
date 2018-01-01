@@ -1,6 +1,10 @@
 import { web3, core, sale, sire } from './eth/web3'
 import db from './db/'
 
+// this script is a memory hog, needs more than default of 1.4GB mem
+import v8 from 'v8'
+v8.setFlagsFromString('--max_old_space_size=4096');
+
 // To get contract instance from string eg 'core' w/out using global
 const ck = { core, sale, sire }
 
@@ -138,10 +142,15 @@ const syncEvents = () => {
       var COUNT = 0
       var OLDI = fromBlock
       const remember = (i, contract, name) => {
-        if (i < firstBlock) return ('done')
+        if (i < firstBlock) {
+          console.log(`Finished syncing ${name} events from ${contract}`)
+          return('done')
+        }
 
-        if (COUNT > 25) {
-          console.log(`=== Found ${COUNT} ${name} events from ${contract} in blocks ${OLDI}-${i}`)
+        // log a chunk of our progress
+        if (COUNT > 100) {
+          console.log(`=== Found ${COUNT} ${name} events from ${contract} in blocks ${
+          OLDI}-${i} (${Math.round(15*(fromBlock-i)/60/60)} hours ago)`)
           COUNT = 0
           OLDI = i
         }
