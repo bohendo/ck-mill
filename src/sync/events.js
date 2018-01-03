@@ -10,56 +10,67 @@ const syncEvents = (ck, firstBlock, throttle) => {
     var fromBlock = Number(res.number)
     console.log(`Starting event watchers from block ${fromBlock}`)
 
-    db.query(`CREATE TABLE IF NOT EXISTS Transfer (
-      txhash     CHAR(66)    PRIMARY KEY,
+    // Autobirther contracts often birth multiple kitties from one txhash
+    // Therefore, we need to use something other than just txhash for a primary key
+    // txhash plus kittyid is enough to ensure no duplicates AND no missed data
+
+    db.query(`CREATE TABLE IF NOT EXISTS transfer (
+      txhash     CHAR(66)    NOT NULL,
       blockn     BIGINT      NOT NULL,
       sender     CHAR(42)    NOT NULL,
       recipient  CHAR(42)    NOT NULL,
-      kittyid    BIGINT      NOT NULL);`)
+      kittyid    BIGINT      NOT NULL,
+      PRIMARY KEY (txhash, kittyid) );`)
 
-    db.query(`CREATE TABLE IF NOT EXISTS Approval (
-      txhash     CHAR(66)    PRIMARY KEY,
+    db.query(`CREATE TABLE IF NOT EXISTS approval (
+      txhash     CHAR(66)    NOT NULL,
       blockn     BIGINT      NOT NULL,
       owner      CHAR(42)    NOT NULL,
       approved   CHAR(42)    NOT NULL,
-      kittyid    BIGINT      NOT NULL);`)
+      kittyid    BIGINT      NOT NULL,
+      PRIMARY KEY (txhash, kittyid) );`)
 
-    db.query(`CREATE TABLE IF NOT EXISTS Birth (
-      txhash     CHAR(66)    PRIMARY KEY,
+    db.query(`CREATE TABLE IF NOT EXISTS birth (
+      txhash     CHAR(66)    NOT NULL,
       blockn     BIGINT      NOT NULL,
       owner      CHAR(42)    NOT NULL,
       kittyid    BIGINT      NOT NULL,
       matronid   BIGINT      NOT NULL,
       sireid     BIGINT      NOT NULL,
-      genes      NUMERIC(78) NOT NULL);`)
+      genes      NUMERIC(78) NOT NULL,
+      PRIMARY KEY (txhash, kittyid) );`)
 
-    db.query(`CREATE TABLE IF NOT EXISTS Pregnant (
-      txhash      CHAR(66)    PRIMARY KEY,
+    db.query(`CREATE TABLE IF NOT EXISTS pregnant (
+      txhash      CHAR(66)    NOT NULL,
       blockn      BIGINT      NOT NULL,
       owner       CHAR(42)    NOT NULL,
       matronid    BIGINT      NOT NULL,
       sireid      BIGINT      NOT NULL,
-      cooldownend NUMERIC(78) NOT NULL);`)
+      cooldownend NUMERIC(78) NOT NULL,
+      PRIMARY KEY (txhash, matronid) );`)
 
     // contract [string] will be one of 'sale', or 'sire'
     const auctionTableInit = (contract) => {
-      db.query(`CREATE TABLE IF NOT EXISTS ${contract}AuctionCreated (
-        txhash     CHAR(66)    PRIMARY KEY,
+      db.query(`CREATE TABLE IF NOT EXISTS ${contract}created (
+        txhash     CHAR(66)    NOT NULL,
         blockn     BIGINT      NOT NULL,
         kittyid    BIGINT      NOT NULL,
         startprice NUMERIC(78) NOT NULL,
         endprice   NUMERIC(78) NOT NULL,
-        duration   BIGINT      NOT NULL);`)
-      db.query(`CREATE TABLE IF NOT EXISTS ${contract}AuctionSuccessful (
-        txhash     CHAR(66)    PRIMARY KEY,
+        duration   BIGINT      NOT NULL,
+        PRIMARY KEY (txhash, kittyid) );`)
+      db.query(`CREATE TABLE IF NOT EXISTS ${contract}successful (
+        txhash     CHAR(66)    NOT NULL,
         blockn     BIGINT      NOT NULL,
         kittyid    BIGINT      NOT NULL,
         price      NUMERIC(78) NOT NULL,
-        winner     CHAR(42)    NOT NULL);`)
-      db.query(`CREATE TABLE IF NOT EXISTS ${contract}AuctionCancelled (
-        txhash     CHAR(66)    PRIMARY KEY,
+        winner     CHAR(42)    NOT NULL,
+        PRIMARY KEY (txhash, kittyid) );`)
+      db.query(`CREATE TABLE IF NOT EXISTS ${contract}cancelled (
+        txhash     CHAR(66)    NOT NULL,
         blockn     BIGINT      NOT NULL,
-        kittyid    BIGINT      NOT NULL);`)
+        kittyid    BIGINT      NOT NULL,
+        PRIMARY KEY (txhash, kittyid) );`)
     }
     auctionTableInit('sale')
     auctionTableInit('sire')
@@ -69,8 +80,12 @@ const syncEvents = (ck, firstBlock, throttle) => {
     // data [object] will contain tx receipt and return values from event
     const saveEvent = (contract, name, data) => {
       let table = ''
-      if (contract === 'sale' || contract === 'sire') { table += contract }
-      table += name
+      if (contract === 'sale' || contract === 'sire') {
+        // table name should be eg salecreated
+        table += contract + name.replace('Auction', '')
+      } else {
+        table += name
+      }
 
       // pay attention to which ${} are strings that need to be enclosed in quotes eg '${}'
       // and which are numbers that don't need single quotes eg ${}

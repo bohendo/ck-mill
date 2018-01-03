@@ -12,5 +12,5 @@ const firstBlock = 4605167
 
 // Activate!
 // last arg is throttle in milliseconds aka delay between eth data requests
-syncEvents(ck, firstBlock, 1000) 
-syncKitties(ck, firstBlock, 100)
+syncEvents(ck, firstBlock, 200)
+syncKitties(ck, firstBlock, 5000) // basically turn this off for now..
