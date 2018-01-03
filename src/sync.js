@@ -10,10 +10,7 @@ const ck = { core, sale, sire }
 // block at which cryptokitties was deployed
 const firstBlock = 4605167
 
-// Pause throttle milliseconds between recalling events from previous blocks
-// (Because geth can't stay synced if we relentlessly request data from it)
-const throttle = 250
-
 // Activate!
-syncKitties(ck, firstBlock, throttle)
-syncEvents(ck, firstBlock, throttle)
+// last arg is throttle in milliseconds aka delay between eth data requests
+syncEvents(ck, firstBlock, 1000) 
+syncKitties(ck, firstBlock, 100)

@@ -1,6 +1,8 @@
 import { web3, core, sale, sire } from '../eth/web3'
 import db from '../db/'
 
+// Pause throttle milliseconds between each historical data request
+// Because geth can't stay synced if we relentlessly request data from it
 const syncEvents = (ck, firstBlock, throttle) => {
 
   web3.eth.getBlock('latest').then(res => {

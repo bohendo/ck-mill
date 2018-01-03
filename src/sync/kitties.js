@@ -3,6 +3,8 @@ import db from '../db/'
 
 var START = new Date().getTime()/1000
 
+// Pause throttle milliseconds between each historical data request
+// Because geth can't stay synced if we relentlessly request data from it
 const syncKitties = (ck, firstBlock, throttle) => {
 
   ck.core.methods.totalSupply().call().then(totalKitty => {
