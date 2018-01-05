@@ -124,6 +124,8 @@ const syncEvents = (ck, firstBlock, throttle) => {
       var FROMI = fromBlock
 
       // get current/future events
+      // TODO: this event watcher is killed when remember() finishes, stop this!
+      //       Or, let it die and call sync again to bring it back to live
       ck[contract].events[name]({ fromBlock }, (err, data) => {
         if (err) { console.error(err); process.exit(1) }
         saveEvent(contract, name, data)
