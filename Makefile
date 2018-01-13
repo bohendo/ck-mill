@@ -21,22 +21,27 @@ $(shell mkdir -p build)
 ##### RULES #####
 # first rule is the default
 
+# make everything, no deployments
 all: console-image sync-image autobirther-image
 	@true
 
+# deploy everything
 deploy: console-image sync-image autobirther-image
 	docker push $(me)/ckmill_console:$v
 	docker push $(me)/ckmill_sync:$v
 	docker push $(me)/ckmill_autobirther:$v
 
+# deploy console
 console: console-image
 	docker push $(me)/ckmill_console:$v
 	touch build/console
 
+# deploy sync
 sync: sync-image
 	docker push $(me)/ckmill_sync:$v
 	touch build/sync
 
+# deploy autobirther
 autobirther: autobirther-image
 	docker push $(me)/ckmill_autobirther:$v
 	touch build/autobirther

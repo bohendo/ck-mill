@@ -1,7 +1,7 @@
 import { core, sale, sire } from './eth/web3'
 import db from './db'
 
-console.log('console loaded!')
+console.log('ckmill console is loaded!')
 
 // TODO: don't hardcode my kitties...
 // bg1 for gen 1 breeding group

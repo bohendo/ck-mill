@@ -1,41 +1,25 @@
 #!/bin/bash
 
-image="`whoami`/ckmill_console:latest"
+name=ckmill_console
+image="`whoami`/$name:latest"
 
-docker pull $image
+# duplicate the stdout file descriptor
+exec 5>&1
 
-# TODO: give access to postgres connection data
-# container=`docker ls -q -f name="ckmill_console"`
-# docker attach $container
+# print & capture output
+pullout=`docker pull $image | tee /dev/fd/5`
 
-docker service rm ckmill_console 2> /dev/null
+if [[ -z "`echo $pullout | grep "up to date"`" ]]
+then
+  docker service update --image $image $name
+fi
 
-service=`docker service create \
-  --detach \
-  --mode global \
-  --name ckmill_console \
-  --secret postgres \
-  --env ETH_ADDRESS \
-  --env PGHOST=postgres \
-  --env PGPORT=5432 \
-  --env PGUSER=ckmill \
-  --env PGDATABASE=ckmill \
-  --env PGPASSFILE=/run/secrets/postgres \
-  --mount "type=volume,source=ethprovider_ipc,target=/tmp/ipc" \
-  --network ckmill_back \
-  --entrypoint "sleep 300000" \
-  $image`
+containerid=`docker service ps -q $name | head -n1`
 
-sleep 2
-
-containerid=`docker service ps -q $service | head -n1`
+# name of container deployed as a docker swarm includes the first 25 chars of each id
 container=`docker inspect --format '{{.NodeID}}{{.Status.ContainerStatus.ContainerID}}' $containerid | head -c25`
 containerid=`echo $containerid | head -c25`
 
-echo created service with id: $service
-echo container id: $container
-
-sleep 2
-
-docker exec -it ckmill_console.$container.$containerid node -i -r /root/ck.js
+echo docker exec -it $name.$container.$containerid node -i -r /root/ck.js
+docker exec -it $name.$container.$containerid node -i -r /root/ck.js
 
