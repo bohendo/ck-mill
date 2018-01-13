@@ -9,6 +9,7 @@ module.exports = {
   entry: {
     autobirther: './src/autobirther.js',
     sync: './src/sync.js',
+    console: './src/console.js',
   },
 
   output: {

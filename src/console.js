@@ -1,7 +1,10 @@
-import { core, sale, sire } from './eth/geth'
+import { core, sale, sire } from './eth/web3'
+import db from './db'
+
+console.log('console loaded!')
 
 // TODO: don't hardcode my kitties...
-// bg for breeding group 1
+// bg1 for gen 1 breeding group
 const bg0 = [25493, 403350]
 const bg1 = [3954, 85736, 113881, 117491, 228842, 418037]
 const bg2 = [258963, 279505, 282323, 344576, 345869, 375866, 381126, 382851, 382857, 392928]
@@ -61,7 +64,7 @@ const breedGroup = (lok) => {
   let ready = []
   for (let i=0; i<lok.length; i++) {
     // Do you own this kitty?
-    if (eth.accounts[0] !== core.ownerOf(lok[i])) {
+    if (web3.eth.accounts[0] !== core.ownerOf(lok[i])) {
       return(`Error: you don't own kitty ${lok[i]}`)
     }
     if (core.getKitty(lok[i])[1]) {
@@ -89,38 +92,38 @@ const breedGroup = (lok) => {
 
   // (matron, sire)
   const tx = {
-    from: eth.accounts[0],
+    from: web3.eth.accounts[0],
     to: core.address,
     value: core.autoBirthFee(),
     gas: 150000,
-    gasPrice: eth.gasPrice * 0.9,
+    gasPrice: web3.eth.gasPrice * 0.9,
     data: core.breedWithAuto.getData(ready[0], ready[1]),
   }
   console.log(JSON.stringify(tx, null, 2))
-  personal.unlockAccount(eth.accounts[0])
-  var txhash = eth.sendTransaction(tx)
-  personal.lockAccount(eth.accounts[0])
-  return eth.getTransaction(txhash)
+  personal.unlockAccount(web3.eth.accounts[0])
+  var txhash = web3.eth.sendTransaction(tx)
+  personal.lockAccount(web3.eth.accounts[0])
+  return web3.eth.getTransaction(txhash)
 }
 
 
 const status = () => {
-  if (eth.syncing) {
-    return `On block ${eth.syncing.currentBlock} (latest is ${eth.syncing.highestBlock-eth.syncing.currentBlock} blocks ahead)`
+  if (web3.eth.syncing) {
+    return `On block ${web3.eth.syncing.currentBlock} (latest is ${web3.eth.syncing.highestBlock-web3.eth.syncing.currentBlock} blocks ahead)`
   } else {
-    return `On block ${eth.blockNumber} (we're up to date!)`
+    return `On block ${web3.eth.blockNumber} (we're up to date!)`
   }
 }
 
 const sellKitty = (id, milli) => {
-  personal.unlockAccount(eth.accounts[0])
+  personal.unlockAccount(web3.eth.accounts[0])
   core.createSaleAuction.sendTransaction(
     id,
     web3.toWei(milli,'milli'),
     0,
     129600,
     {
-      from: eth.accounts[0],
+      from: web3.eth.accounts[0],
       to: core.address,
       value: 0,
       gas: 250000,
@@ -129,11 +132,11 @@ const sellKitty = (id, milli) => {
       if (error) {
         console.error(JSON.stringify(error, null, 2))
       } else {
-        console.log(JSON.stringify(eth.getTransaction(txhash), null, 2))
+        console.log(JSON.stringify(web3.eth.getTransaction(txhash), null, 2))
       }
     }
   )
-  personal.lockAccount(eth.accounts[0]) // don't accidently sell twice!
+  personal.lockAccount(web3.eth.accounts[0]) // don't accidently sell twice!
   return status()
 }
 
@@ -207,4 +210,6 @@ const ls = () => {
   }
 }
 
-export { core, sale, sire, getKitty, sellKitty, status, breedGroup, myKitties, findBreedingPair, ls, bg0, bg1, bg2 }
+const ck = { db, core, sale, sire, getKitty, sellKitty, status, breedGroup, myKitties, findBreedingPair, ls, bg0, bg1, bg2 }
+
+export default ck

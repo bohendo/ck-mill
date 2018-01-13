@@ -32,7 +32,6 @@ services:
     secrets:
       - postgres
     environment:
-      - ETH_PROVIDER=/tmp/ipc/geth.ipc
       - ETH_ADDRESS
       - PGHOST=postgres
       - PGPORT=5432
@@ -53,7 +52,6 @@ services:
     secrets:
       - postgres
     environment:
-      - ETH_PROVIDER=/tmp/ipc/geth.ipc
       - ETH_ADDRESS
       - PGHOST=postgres
       - PGPORT=5432
