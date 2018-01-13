@@ -7,7 +7,7 @@ import Web3 from 'web3'
 import { CORE, SALE, SIRE } from './ck/'
 
 const web3 = new Web3(new Web3.providers.IpcProvider(
-  process.env.ETH_PROVIDER,
+  '/tmp/ipc/eth.ipc',
   new net.Socket()
 ))
 

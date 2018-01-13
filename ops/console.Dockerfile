@@ -6,5 +6,5 @@ COPY --from=base /usr/local/bin/geth /usr/local/bin
 
 COPY ./build/ck.bundle.js /root/ck.js
 
-ENTRYPOINT ["/usr/local/bin/geth", "--preload", "/root/ck.js", "attach", "ipc:/tmp/ipc/geth.ipc"]
+ENTRYPOINT ["/usr/local/bin/geth", "--preload", "/root/ck.js", "attach", "ipc:/tmp/ipc/eth.ipc"]
 

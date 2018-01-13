@@ -3,30 +3,28 @@ import db from '../db/'
 
 // Pause throttle milliseconds between each historical data request
 // Because geth can't stay synced if we relentlessly request data from it
-const syncEvents = (ck, firstBlock, throttle) => {
+const syncEvents = (throttle) => {
 
+  // transalate 'latest' -> block number
+  // bc web3 event watchers behave better if we tell them when exactly to start watching
+  // https://github.com/ethereum/web3.js/issues/989
   web3.eth.getBlock('latest').then(res => {
-
     var fromBlock = Number(res.number)
+
     console.log(`Starting event watchers from block ${fromBlock}`)
 
-    // Autobirther contracts often birth multiple kitties from one txhash
-    // Therefore, we need to use something other than just txhash for a primary key
-    // txhash plus kittyid is enough to ensure no duplicates AND no missed data
+    // cryptokitty actions can be batched with a contract resulting in multiple
+    // events with the same txhash (especially thanks to autobirther contracts)
+    // it's almost always sufficient to use the combo of txhash/kittyid as an
+    // effective primary key instead.
 
+    // WARNING: It's possible but very unlikely that two rows of the transfer table
+    // will be idential and yet both valid. I'm ignoring this edge case for now
     db.query(`CREATE TABLE IF NOT EXISTS transfer (
       txhash     CHAR(66)    NOT NULL,
       blockn     BIGINT      NOT NULL,
       sender     CHAR(42)    NOT NULL,
       recipient  CHAR(42)    NOT NULL,
-      kittyid    BIGINT      NOT NULL,
-      PRIMARY KEY (txhash, kittyid) );`)
-
-    db.query(`CREATE TABLE IF NOT EXISTS approval (
-      txhash     CHAR(66)    NOT NULL,
-      blockn     BIGINT      NOT NULL,
-      owner      CHAR(42)    NOT NULL,
-      approved   CHAR(42)    NOT NULL,
       kittyid    BIGINT      NOT NULL,
       PRIMARY KEY (txhash, kittyid) );`)
 
@@ -40,6 +38,14 @@ const syncEvents = (ck, firstBlock, throttle) => {
       genes      NUMERIC(78) NOT NULL,
       PRIMARY KEY (txhash, kittyid) );`)
 
+    db.query(`CREATE TABLE IF NOT EXISTS approval (
+      txhash     CHAR(66)    NOT NULL,
+      blockn     BIGINT      NOT NULL,
+      owner      CHAR(42)    NOT NULL,
+      approved   CHAR(42)    NOT NULL,
+      kittyid    BIGINT      NOT NULL,
+      PRIMARY KEY (txhash, kittyid) );`)
+
     db.query(`CREATE TABLE IF NOT EXISTS pregnant (
       txhash      CHAR(66)    NOT NULL,
       blockn      BIGINT      NOT NULL,
@@ -49,7 +55,7 @@ const syncEvents = (ck, firstBlock, throttle) => {
       cooldownend NUMERIC(78) NOT NULL,
       PRIMARY KEY (txhash, matronid) );`)
 
-    // contract [string] will be one of 'sale', or 'sire'
+    // here, contract will be one of 'sale', or 'sire'
     const auctionTableInit = (contract) => {
       db.query(`CREATE TABLE IF NOT EXISTS ${contract}created (
         txhash     CHAR(66)    NOT NULL,
@@ -76,19 +82,16 @@ const syncEvents = (ck, firstBlock, throttle) => {
     auctionTableInit('sire')
 
     // contract [string] will be one of 'core', 'sale', or 'sire'
-    // name [string] will be one of 'transfer', 'approval', 'birth', or 'pregnant'
+    // name [string] will be one of 'transfer', 'approval', 'birth', 'pregnant', etc
     // data [object] will contain tx receipt and return values from event
     const saveEvent = (contract, name, data) => {
-      let table = ''
-      if (contract === 'sale' || contract === 'sire') {
-        // table name should be eg salecreated
-        table += contract + name.replace('Auction', '')
-      } else {
-        table += name
-      }
+
+      // Get the name of the table storing this type of event eg birth or saleCreated
+      const table = (contract === 'core') ? name : contract + name.replace('Auction', '')
 
       // pay attention to which ${} are strings that need to be enclosed in quotes eg '${}'
       // and which are numbers that don't need single quotes eg ${}
+      // see README for cheatsheet regarding data types returned by each event
       let q = `INSERT INTO ${table} VALUES ('${data.transactionHash}', ${data.blockNumber}, ` 
       if (name === 'AuctionCreated') {
         q += `${data.returnValues[0]}, ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]});`
@@ -108,49 +111,50 @@ const syncEvents = (ck, firstBlock, throttle) => {
       db.query(q).then(res=>{
         data = null // get garbage collected!
       }).catch(error=>{
-        // I'll let postgres quietly sort out my duplicate queries for me
+        data = null // get garbage collected!
+        // I'll let postgres quietly filter out my duplicate queries for me
         if (error.code !== '23505') { console.error(error) }
       })
     }
+
+    // To get contract instance from string eg 'core' w/out using global
+    // each sync instance can share this one ck object
+    const ck = { core, sale, sire }
 
     // fromBlock [int] start listening from this block number
     // contract [string] will be one of 'core', 'sale', or 'sire'
     // name [string] of event to listen for
     const sync = (fromBlock, contract, name) => {
 
-      // some variables used to keep track of stats worth logging
+      // counters used to keep track of stats worth logging
+      // specific to each sync instance; preserved across recursive remember() calls
       var NEW = 0
       var OLD = 0
-      var FROMI = fromBlock
 
-      // get current/future events
-      // TODO: this event watcher is killed when remember() finishes, stop this!
-      //       Or, let it die and call sync again to bring it back to live
+      // watch for get current/future events
       ck[contract].events[name]({ fromBlock }, (err, data) => {
         if (err) { console.error(err); process.exit(1) }
         saveEvent(contract, name, data)
-        fromBlock = Number(data.blockNumber)
         NEW += 1
+        // TODO: why is this here? fromBlock = Number(data.blockNumber)
       })
 
       // i [int] remember past events from block number i
       // contract [string] will be one of 'core', 'sale', or 'sire'
       // name [string] of event to remember
       const remember = (i, contract, name) => {
-        if (i < firstBlock) {
-          console.log(`=== Finished syncing ${name} events from ${contract}`)
+        if (i < 4605167) { // block at which cryptokitties was deployed
+          console.log(`===== Finished syncing ${name} events from ${contract}`)
           return('done')
         }
 
-        // log a chunk of our progress
+        // log a chunk of our progress?
         if (OLD > 250) {
-          console.log(`Found ${OLD} old ${name} events from ${contract} in blocks ${
-            FROMI}-${i} (${Math.round(15*(fromBlock-i)/60/60)} hours ago)`)
+          console.log(`Found ${OLD} old ${name} events from ${contract} at/before block ${i} (${Math.round(15*(fromBlock-i)/60/60)} hours ago)`)
           OLD = 0
-          FROMI = i
         }
         if (NEW > 10) {
-          console.log(`= Disovered ${NEW} new ${name} events from ${contract} around ${fromBlock} <--- most recent block`)
+          console.log(`=> Disovered ${NEW} new ${name} events from ${contract} around ${fromBlock} <--- most recent block`)
           NEW = 0
         }
 
@@ -159,9 +163,8 @@ const syncEvents = (ck, firstBlock, throttle) => {
           OLD += pastEvents.length
           pastEvents.forEach(data=>{ saveEvent(contract, name, data) })
 
-          // give node a sec to clear the call stack & give geth a sec to stay synced
+          // give node a sec to clear the call stack & give ethprovider a sec to stay synced
           setTimeout(()=>{
-            pastEvents = null // get garbage collected!
             remember(i-1, contract, name)
           }, throttle)
         })

@@ -32,7 +32,9 @@ const updateDueDates = (pregos, births) => {
     const cooldownend = Number(preg.cooldownend)
     const matronid = Number(preg.matronid)
 
-    // find the entry in duedates for the cooldownend block
+    if (matronid === 278308) { console.log(`found pregnancy for kitty ${matronid} due at block ${cooldownend}`) }
+
+    // find the entry in duedates for this cooldownend block
     let isNew = true
     for (let i=0; i<DUEDATES.length; i++) {
       if (DUEDATES[i].block == cooldownend) {
@@ -56,16 +58,19 @@ const updateDueDates = (pregos, births) => {
     const block = Number(birth.blockn)
     const matronid = Number(birth.matronid)
 
+    if (matronid === 278308) { console.log(`found birth for kitty ${matronid} at block ${block}`) }
+
     // for all our due dates..
     for (let i=0; i<DUEDATES.length; i++) {
       // If this birth comes after a date at which this kitty was due..
-      if (DUEDATES[i] && DUEDATES[i].block <= block && DUEDATES[i].due.includes(matronid)) {
+      if (DUEDATES[i].block <= block && DUEDATES[i].due.includes(matronid)) {
         // remove this due date
         DUEDATES[i].due.splice(DUEDATES[i].due.indexOf(matronid), 1)
       }
       // If this due date is empty now, get rid of it
       if (DUEDATES[i].due.length === 0) {
         DUEDATES.splice(i, 1)
+        i -= 1 // We removed an element from the list so the same index now points to the next element
       }
     }
   })
@@ -73,11 +78,38 @@ const updateDueDates = (pregos, births) => {
   // Sort due dates so that most recent is on top
   DUEDATES.sort((a,b) => { return a.block-b.block })
 
-  console.log('DUEDATES:')
-  for (let i=0; i<15; i++) {
-    console.log(`${JSON.stringify(DUEDATES[i])}`)
+  // print the first 10 due dates
+  console.log('Tentative DUEDATES:')
+  for (let i=0; i<10; i++) { console.log(`${JSON.stringify(DUEDATES[i])}`) }
+
+  // how many pregnant kitties did we find?
+  let npreg = 0
+  for (let i=0; i<DUEDATES.length; i++) {
+    npreg += DUEDATES[i].due.length
+  }
+  console.log(`We found ${npreg} pregnant kitties`)
+  
+  core.methods.pregnantKitties().call().then(res=>{
+    console.log(`The blockchain says there are ${JSON.stringify(res)} pregnant kitties`)
+  }).catch(console.error)
+
+  // loop through the kitties we found and figure out which ones shouldn't be here
+  for (let i=0; i<DUEDATES.length; i++) {
+    for (let j=0; j<DUEDATES[i].due.length; j++) {
+      core.methods.getKitty(DUEDATES[i].due[j]).call().then(kitty=>{
+        
+        if (!kitty.isGestating) {
+          console.log(`Kitty ${DUEDATES[i].due[j]} is NOT pregnant but was supposedly due at block ${DUEDATES[i].block}, removing...`)
+          DUEDATES[i].due.splice(j, 1)
+        }
+
+      }).catch(()=>{ console.log(`Error getting kitty ${DUEDATES[i].due[j]}`) })
+    }
   }
 
+  // print the first 10 due dates
+  console.log('REAL DUEDATES:')
+  for (let i=0; i<10; i++) { console.log(`${JSON.stringify(DUEDATES[i])}`) }
 }
 
 const initializeDueDates = (callback) => {
@@ -97,7 +129,7 @@ const initializeDueDates = (callback) => {
     const birth_query = `
       SELECT DISTINCT ON (matronid) matronid,blockn
       FROM birth
-      WHERE blockn > ${latest-WEEK-1}
+      WHERE blockn > ${latest-WEEK-100}
       ORDER BY matronid DESC, blockn DESC;`
 
     db.query(preg_query).then(pregos => {
@@ -124,11 +156,15 @@ const initializeDueDates = (callback) => {
   })
 }
 
-const heartbeat = () => {
+const listen = () => {
+
+  // TODO: add event listeners:
+  // core.events.Birth({fromblock: something }, ()=>{  })
+
   console.log('thump thump')
 }
 
 ////////////////////////////////////////
 // Execute
-initializeDueDates(heartbeat)
+initializeDueDates(listen)
 
