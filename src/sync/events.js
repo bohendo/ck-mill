@@ -126,36 +126,29 @@ const syncEvents = (throttle) => {
     // name [string] of event to listen for
     const sync = (fromBlock, contract, name) => {
 
-      // counters used to keep track of stats worth logging
-      // specific to each sync instance; preserved across recursive remember() calls
-      var NEW = 0
-      var OLD = 0
-
       // watch for get current/future events
       ck[contract].events[name]({ fromBlock }, (err, data) => {
         if (err) { console.error(err); process.exit(1) }
         saveEvent(contract, name, data)
-        NEW += 1
-        // TODO: why is this here? fromBlock = Number(data.blockNumber)
+          console.log(`${new Date().toISOString()} E=> ${name} event discovered from ${contract} at ${fromBlock}`)
       })
+
+      // counter used to keep track of stats worth logging
+      var OLD = 0
 
       // i [int] remember past events from block number i
       // contract [string] will be one of 'core', 'sale', or 'sire'
       // name [string] of event to remember
       const remember = (i, contract, name) => {
         if (i < 4605167) { // block at which cryptokitties was deployed
-          console.log(`===== Finished syncing ${name} events from ${contract}`)
+          console.log(`${new Date().toISOString()} ===== Finished syncing ${name} events from ${contract}`)
           return('done')
         }
 
         // log a chunk of our progress?
-        if (OLD > 250) {
-          console.log(`Found ${OLD} old ${name} events from ${contract} at/before block ${i} (${Math.round(15*(fromBlock-i)/60/60)} hours ago)`)
+        if (OLD >= 100) {
+          console.log(`${new Date().toISOString()} [E] Found ${OLD} old ${name} events from ${contract} at/before block ${i} (${Math.round(15*(fromBlock-i)/60/60)} hours ago)`)
           OLD = 0
-        }
-        if (NEW > 10) {
-          console.log(`=> Disovered ${NEW} new ${name} events from ${contract} around ${fromBlock} <--- most recent block`)
-          NEW = 0
         }
 
         ck[contract].getPastEvents(name, { fromBlock: i, toBlock: i }, (err, pastEvents) => {
@@ -169,7 +162,6 @@ const syncEvents = (throttle) => {
           }, throttle)
         })
       }
-
       remember(fromBlock, contract, name)
     }
 

@@ -63,7 +63,7 @@ const syncKitties = (throttle) => {
         const block = Number(birth.blockNumber)
         core.methods.getKitty(id).call().then(kitty => {
           saveKitty(id, kitty)
-          console.log(`= Saving new kitty ${id} born on block ${block} (started listening ${block-latest} blocks ago)`)
+          console.log(`${new Date().toISOString()} K=> Saved new kitty born on block ${block} (started listening ${block-latest} blocks ago)`)
         }).catch((error)=>{
           console.error(`Error getting new kitty ${id}: ${JSON.stringify(error)}`)
         })
@@ -73,26 +73,26 @@ const syncKitties = (throttle) => {
       process.exit(1)
     })
 
-    var COUNT = 1 // should be preserved across recursive kittyLoop() calls
+    var OLD = 0 // keep track of how many old kitties we sync
     const kittyLoop = (id) => {
+
       if (id < 0) {
-        console.log(`=== Done syncing kitties!`)
+        console.log(`${new Date().toISOString()} === Done syncing kitties!`)
         return ('done')
       }
 
       core.methods.getKitty(id).call().then(kitty => {
-        COUNT += 1
 
         // log a chunk of our progress
-        if (COUNT >= 100) {
-          console.log(`Synced all kitties over ${id} (${
+        if (OLD >= 100) {
+          console.log(`${new Date().toISOString()} [K] Synced kitties ${id-OLD}-${id} (${
             Math.round((totalSupply-id)/totalSupply*100)
           }% complete in ${
             Math.round(((new Date().getTime()/1000)-START)/60)
           } minutes)`)
-          COUNT = 0
+          OLD = 0
         }
-
+        OLD += 1
         saveKitty(id, kitty)
         setTimeout(() => { kittyLoop(id-1) }, throttle);
 
