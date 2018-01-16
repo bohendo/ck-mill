@@ -21,5 +21,6 @@ container=`docker inspect --format '{{.NodeID}}{{.Status.ContainerStatus.Contain
 containerid=`echo $containerid | head -c25`
 
 echo docker exec -it $name.$container.$containerid node -i -r /root/ck.js
+
 docker exec -it $name.$container.$containerid node -i -r /root/ck.js
 

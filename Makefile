@@ -58,8 +58,11 @@ build/autobirther-image: autobirther.Dockerfile autobirther.bundle.js
 	docker build -f ops/autobirther.Dockerfile -t $(me)/ckmill_autobirther:$v -t ckmill_autobirther:$v .
 	touch build/autobirther-image
 
-build/console.bundle.js build/autobirther.bundle.js build/sync.bundle.js: node_modules webpack.config.js $(js)
-	$(webpack) --config ops/webpack.config.js
+build/console.bundle.js: node_modules webpack.console.js $(js)
+	$(webpack) --config ops/webpack.console.js
+
+build/autobirther.bundle.js build/sync.bundle.js: node_modules webpack.daemon.js $(js)
+	$(webpack) --config ops/webpack.daemon.js
 
 node_modules: package.json
 	npm install
