@@ -129,8 +129,9 @@ const syncEvents = (throttle) => {
       // watch for get current/future events
       ck[contract].events[name]({ fromBlock }, (err, data) => {
         if (err) { console.error(err); process.exit(1) }
+        const block = Number(data.blockNumber)
         saveEvent(contract, name, data)
-          console.log(`${new Date().toISOString()} E=> ${name} event discovered from ${contract} at ${fromBlock}`)
+          console.log(`${new Date().toISOString()} E=> ${name} event discovered from ${contract} at block ${block}`)
       })
 
       // counter used to keep track of stats worth logging
