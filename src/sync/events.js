@@ -2,7 +2,7 @@ import { web3, core, sale, sire } from '../eth/web3'
 import db from '../db/'
 
 // Pause throttle milliseconds between each historical data request
-// Because geth can't stay synced if we relentlessly request data from it
+// Because ethprovider can't stay synced if we relentlessly request data from it
 const syncEvents = (throttle) => {
 
   // transalate 'latest' -> block number
@@ -83,8 +83,8 @@ const syncEvents = (throttle) => {
 
     // contract [string] will be one of 'core', 'sale', or 'sire'
     // name [string] will be one of 'transfer', 'approval', 'birth', 'pregnant', etc
-    // data [object] will contain tx receipt and return values from event
-    const saveEvent = (contract, name, data) => {
+    // event [object] will contain tx receipt and return values from event
+    const saveEvent = (contract, name, event) => {
 
       // Get the name of the table storing this type of event eg birth or saleCreated
       const table = (contract === 'core') ? name : contract + name.replace('Auction', '')
@@ -92,28 +92,30 @@ const syncEvents = (throttle) => {
       // pay attention to which ${} are strings that need to be enclosed in quotes eg '${}'
       // and which are numbers that don't need single quotes eg ${}
       // see README for cheatsheet regarding data types returned by each event
-      let q = `INSERT INTO ${table} VALUES ('${data.transactionHash}', ${data.blockNumber}, ` 
+      let q = `INSERT INTO ${table} VALUES ('${event.transactionHash}', ${event.blockNumber}, `
       if (name === 'AuctionCreated') {
-        q += `${data.returnValues[0]}, ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]});`
+        q += `${event.returnValues[0]}, ${event.returnValues[1]}, ${event.returnValues[2]}, ${event.returnValues[3]});`
       } else if (name === 'AuctionSuccessful') {
-        q += `${data.returnValues[0]}, ${data.returnValues[1]}, '${data.returnValues[2]}');`
+        q += `${event.returnValues[0]}, ${event.returnValues[1]}, '${event.returnValues[2]}');`
       } else if (name === 'AuctionCancelled') {
-        q += `${data.returnValues[0]});`
+        q += `${event.returnValues[0]});`
       // These two events return the same number of the same data types, how convenient
       } else if (name === 'Transfer' || name === 'Approval') {
-        q += `'${data.returnValues[0]}', '${data.returnValues[1]}', ${data.returnValues[2]});`
+        q += `'${event.returnValues[0]}', '${event.returnValues[1]}', ${event.returnValues[2]});`
       } else if (name === 'Birth') {
-        q += `'${data.returnValues[0]}', ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]}, ${data.returnValues[4]});`
+        q += `'${event.returnValues[0]}', ${event.returnValues[1]}, ${event.returnValues[2]}, ${event.returnValues[3]}, ${event.returnValues[4]});`
       } else if (name === 'Pregnant') {
-        q += `'${data.returnValues[0]}', ${data.returnValues[1]}, ${data.returnValues[2]}, ${data.returnValues[3]});`
+        q += `'${event.returnValues[0]}', ${event.returnValues[1]}, ${event.returnValues[2]}, ${event.returnValues[3]});`
       }
 
-      db.query(q).then(res=>{
-        data = null // get garbage collected!
+      return db.query(q).then(res=>{
+        event = null // get garbage collected!
+        return(0)
       }).catch(error=>{
-        data = null // get garbage collected!
+        event = null // get garbage collected!
         // I'll let postgres quietly filter out my duplicate queries for me
         if (error.code !== '23505') { console.error(error) }
+        return(1)
       })
     }
 
@@ -126,12 +128,26 @@ const syncEvents = (throttle) => {
     // name [string] of event to listen for
     const sync = (fromBlock, contract, name) => {
 
-      // watch for get current/future events
-      ck[contract].events[name]({ fromBlock }, (err, data) => {
+      // watch for new blocks
+      // a vanilla event watcher only seems to notice one event per txhash
+      // We'll manually get ALL events using getPastEvents instead
+      web3.eth.subscribe('newBlockHeaders', (err, header) => {
         if (err) { console.error(err); process.exit(1) }
-        const block = Number(data.blockNumber)
-        saveEvent(contract, name, data)
-          console.log(`${new Date().toISOString()} E=> ${name} event discovered from ${contract} at block ${block}`)
+        const block = Number(header.number)
+        if (name === 'Birth') { console.log(`${new Date().toISOString()}     Imported new block ${block}`) }
+
+        // our subscription occasionally skips blocks, get events from the 5 most recent blocks to protect against this
+        ck[contract].getPastEvents(name, { fromBlock: block-5, toBlock: block }, (err, pastEvents) => {
+          if (err) { console.error(err); process.exit(1) }
+          pastEvents.forEach(event=>{
+            saveEvent(contract, name, event).then(ret=>{
+              if (ret === 0) { // if this event wasn't a duplicate..
+                console.log(`${new Date().toISOString()} E-> ${name} event discovered from ${contract} at block ${block}`)
+              }
+            })
+          })
+        })
+
       })
 
       // counter used to keep track of stats worth logging
@@ -155,7 +171,7 @@ const syncEvents = (throttle) => {
         ck[contract].getPastEvents(name, { fromBlock: i, toBlock: i }, (err, pastEvents) => {
           if (err) { console.error(err); process.exit(1) }
           OLD += pastEvents.length
-          pastEvents.forEach(data=>{ saveEvent(contract, name, data) })
+          pastEvents.forEach(event=>{ saveEvent(contract, name, event) })
 
           // give node a sec to clear the call stack & give ethprovider a sec to stay synced
           setTimeout(()=>{

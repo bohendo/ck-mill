@@ -4,6 +4,8 @@ import db from '../db/'
 // Used to log the elapsed time spent syncing kitties
 var START = new Date().getTime()/1000
 
+// Pause throttle milliseconds between each historical data request
+// Because ethprovider can't stay synced if we relentlessly request data from it
 const syncKitties = (throttle) => {
 
   // Which kitty was most recently born? We'll start syncing back from there
@@ -33,8 +35,9 @@ const syncKitties = (throttle) => {
         ${kitty[0]}, ${kitty[1]}, ${kitty[2]}, ${kitty[3]}, ${kitty[4]},
         ${kitty[5]}, ${kitty[6]}, ${kitty[7]}, ${kitty[8]}, ${kitty[9]});`
 
-      db.query(q1).then(res => {
+      return db.query(q1).then(res => {
         kitty = null // get garbage collected!
+        return (0)
       }).catch(error =>{
         if (error.code !== '23505') { console.error(q, error) }
 
@@ -43,34 +46,40 @@ const syncKitties = (throttle) => {
           ispregnant=${kitty[0]}, isready=${kitty[1]}, cooldownindex=${kitty[2]},
           nextauctiontime=${kitty[3]}, siringwith=${kitty[4]} WHERE kittyid = ${id};`
 
-        db.query(q2).then(res => {
+        return db.query(q2).then(res => {
           kitty = null // get garbage collected!
+          return (1)
         }).catch(error => {
           kitty = null // get garbage collected!
           console.error(q1, q2, error)
+          return (1)
         })
       })
     }
 
     // save new kitties when we detect a birth event!
-    web3.eth.getBlock('latest').then(res => {
-      const latest = Number(res.number)
-      // start event listener & explicitly pass latest block number
-      // https://github.com/ethereum/web3.js/issues/989
-      core.events.Birth({ fromBlock: latest }, (err, birth) => {
+    web3.eth.subscribe('newBlockHeaders', (err, header) => {
+      if (err) { console.error(err); process.exit(1) }
+      const block = Number(header.number)
+
+      // our subscription occasionally skips blocks, get events from the 5 most recent blocks to protect against this
+      core.getPastEvents('Birth', { fromBlock: block-5, toBlock: block }, (err, pastEvents) => {
         if (err) { console.error(err); process.exit(1) }
-        const id = Number(birth.returnValues[1])
-        const block = Number(birth.blockNumber)
-        core.methods.getKitty(id).call().then(kitty => {
-          saveKitty(id, kitty)
-          console.log(`${new Date().toISOString()} K=> Saved new kitty born on block ${block} (started listening ${block-latest} blocks ago)`)
-        }).catch((error)=>{
-          console.error(`Error getting new kitty ${id}: ${JSON.stringify(error)}`)
+
+        pastEvents.forEach(event=>{
+          const id = Number(event.returnValues[1])
+          core.methods.getKitty(id).call().then(kitty => {
+            saveKitty(id, kitty).then(ret=>{
+              if (ret === 0) { // if this kitty was newly inserted, not updated
+                console.log(`${new Date().toISOString()} K=> Saved kitty ${id} born on block ${block}`)
+              }
+            })
+          }).catch((error)=>{
+            console.error(`Error getting new kitty ${id}: ${JSON.stringify(error)}`)
+          })
         })
+
       })
-    }).catch((error) => {
-      console.error(`KittySync Error: Couldn't get latest block ${JSON.stringify(error)}`)
-      process.exit(1)
     })
 
     var OLD = 0 // keep track of how many old kitties we sync
