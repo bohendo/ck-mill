@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# if postgres docker secret doesn't exist, create it
+if [[ "`docker secret ls --filter "name=postgres" | wc -l`" == "1" ]]
+then
+  head -c30 /dev/urandom | base64 | tr -d '\n\r' | docker secret create postgres -
+fi
+
 syncImage="`whoami`/ckmill_sync:latest"
 autobirtherImage="`whoami`/ckmill_autobirther:latest"
 consoleImage="`whoami`/ckmill_console:latest"
