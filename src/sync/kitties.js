@@ -39,7 +39,7 @@ const syncKitties = (throttle) => {
         kitty = null // get garbage collected!
         return (0)
       }).catch(error =>{
-        if (error.code !== '23505') { console.error(q, error) }
+        if (error.code !== '23505') { console.error(q1, error) }
 
         // update kitty if inserting caused a duplicate key error
         let q2 = `UPDATE Kitties SET

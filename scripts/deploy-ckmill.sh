@@ -4,6 +4,8 @@
 if [[ "`docker secret ls --filter "name=postgres" | wc -l`" == "1" ]]
 then
   head -c30 /dev/urandom | base64 | tr -d '\n\r' | docker secret create postgres -
+  sleep 1
+  echo 'postgres secret initialized'
 fi
 
 syncImage="`whoami`/ckmill_sync:latest"
