@@ -1,4 +1,4 @@
-import { core, sale, sire } from './eth/web3'
+import { web3, core, sale, sire } from './eth/web3'
 import db from './db'
 
 import { breed } from './util/breed'
@@ -91,6 +91,16 @@ const getKitty = (id) => {
   return kitty
 }
 
-const ck = { db, core, sale, sire, breed, ls, bg0, bg1, bg2 }
+const log = (a,b,c,d,e) => {
+  if (a) console.log(JSON.stringify(a,null,2))
+  if (b) console.log(JSON.stringify(b,null,2))
+  if (c) console.log(JSON.stringify(c,null,2))
+  if (d) console.log(JSON.stringify(d,null,2))
+  if (e) console.log(JSON.stringify(e,null,2))
+}
+
+const from = (f) => { return ({ fromBlock: f, toBlock: f }) }
+
+const ck = { web3, db, core, sale, sire, breed, ls, bg0, bg1, bg2, from, log }
 
 export default ck
