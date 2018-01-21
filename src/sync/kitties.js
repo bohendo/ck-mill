@@ -62,8 +62,9 @@ const syncKitties = (throttle) => {
       if (err) { console.error(err); process.exit(1) }
       const block = Number(header.number)
 
-      // our subscription occasionally skips blocks, get events from the 5 most recent blocks to protect against this
-      core.getPastEvents('Birth', { fromBlock: block-5, toBlock: block }, (err, pastEvents) => {
+      // our subscription occasionally skips blocks
+      // get events from several of the most recent blocks to protect against this
+      core.getPastEvents('Birth', { fromBlock: block-10, toBlock: block }, (err, pastEvents) => {
         if (err) { console.error(err); process.exit(1) }
 
         pastEvents.forEach(event=>{

@@ -136,8 +136,9 @@ const syncEvents = (throttle) => {
         const block = Number(header.number)
         if (name === 'Birth') { console.log(`${new Date().toISOString()}     Imported new block ${block}`) }
 
-        // our subscription occasionally skips blocks, get events from the 5 most recent blocks to protect against this
-        ck[contract].getPastEvents(name, { fromBlock: block-5, toBlock: block }, (err, pastEvents) => {
+        // our subscription occasionally skips blocks
+        // get events from several of the most recent blocks to protect against this
+        ck[contract].getPastEvents(name, { fromBlock: block-10, toBlock: block }, (err, pastEvents) => {
           if (err) { console.error(err); process.exit(1) }
           pastEvents.forEach(event=>{
             saveEvent(contract, name, event).then(ret=>{
@@ -168,14 +169,14 @@ const syncEvents = (throttle) => {
           OLD = 0
         }
 
-        ck[contract].getPastEvents(name, { fromBlock: i, toBlock: i }, (err, pastEvents) => {
+        ck[contract].getPastEvents(name, { fromBlock: i-6, toBlock: i }, (err, pastEvents) => {
           if (err) { console.error(err); process.exit(1) }
           OLD += pastEvents.length
           pastEvents.forEach(event=>{ saveEvent(contract, name, event) })
 
           // give node a sec to clear the call stack & give ethprovider a sec to stay synced
           setTimeout(()=>{
-            remember(i-1, contract, name)
+            remember(i-5, contract, name)
           }, throttle)
         })
       }
