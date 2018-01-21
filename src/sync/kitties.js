@@ -47,10 +47,8 @@ const syncKitties = (throttle) => {
           nextauctiontime=${kitty[3]}, siringwith=${kitty[4]} WHERE kittyid = ${id};`
 
         return db.query(q2).then(res => {
-          kitty = null // get garbage collected!
           return (1)
         }).catch(error => {
-          kitty = null // get garbage collected!
           console.error(q1, q2, error)
           return (1)
         })
@@ -74,6 +72,7 @@ const syncKitties = (throttle) => {
               if (ret === 0) { // if this kitty was newly inserted, not updated
                 console.log(`${new Date().toISOString()} K=> Saved kitty ${id} born on block ${block}`)
               }
+              kitty = null // get garbage collected!
             })
           }).catch((error)=>{
             console.error(`Error getting new kitty ${id}: ${JSON.stringify(error)}`)
@@ -103,7 +102,7 @@ const syncKitties = (throttle) => {
           OLD = 0
         }
         OLD += 1
-        saveKitty(id, kitty)
+        saveKitty(id, kitty).then(()=>{ kitty = null }) // get garbage collected!
         setTimeout(() => { kittyLoop(id-1) }, throttle);
 
       }).catch((error)=>{

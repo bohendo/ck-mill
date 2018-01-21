@@ -109,10 +109,8 @@ const syncEvents = (throttle) => {
       }
 
       return db.query(q).then(res=>{
-        event = null // get garbage collected!
         return(0)
       }).catch(error=>{
-        event = null // get garbage collected!
         // I'll let postgres quietly filter out my duplicate queries for me
         if (error.code !== '23505') { console.error(error) }
         return(1)
@@ -145,6 +143,7 @@ const syncEvents = (throttle) => {
               if (ret === 0) { // if this event wasn't a duplicate..
                 console.log(`${new Date().toISOString()} E-> ${name} event discovered from ${contract} at block ${block}`)
               }
+              event = null // get garbage collected!
             })
           })
         })
@@ -172,7 +171,9 @@ const syncEvents = (throttle) => {
         ck[contract].getPastEvents(name, { fromBlock: i-6, toBlock: i }, (err, pastEvents) => {
           if (err) { console.error(err); process.exit(1) }
           OLD += pastEvents.length
-          pastEvents.forEach(event=>{ saveEvent(contract, name, event) })
+          pastEvents.forEach(event=>{
+            saveEvent(contract, name, event).then(()=>{ event = null }) // get garbage collected!
+          })
 
           // give node a sec to clear the call stack & give ethprovider a sec to stay synced
           setTimeout(()=>{
