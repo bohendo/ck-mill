@@ -12,4 +12,7 @@ export default {
   connect: (callback) => {
     return pool.connect(callback)
   },
+  pending: () => {
+    return pool.waitingCount
+  }
 }

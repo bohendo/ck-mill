@@ -129,10 +129,11 @@ const syncEvents = (throttle) => {
       // watch for new blocks
       // a vanilla event watcher only seems to notice one event per txhash
       // We'll manually get ALL events using getPastEvents instead
+
       web3.eth.subscribe('newBlockHeaders', (err, header) => {
         if (err) { console.error(err); process.exit(1) }
         const block = Number(header.number)
-        if (name === 'Birth') { console.log(`${new Date().toISOString()}     Imported new block ${block}`) }
+        if (name === 'Birth') { console.log(`${new Date().toISOString()}     Imported new block ${block} (${db.pending()} pending db requests)`) }
 
         // our subscription occasionally skips blocks
         // get events from several of the most recent blocks to protect against this
@@ -143,11 +144,9 @@ const syncEvents = (throttle) => {
               if (ret === 0) { // if this event wasn't a duplicate..
                 console.log(`${new Date().toISOString()} E-> ${name} event discovered from ${contract} at block ${block}`)
               }
-              event = null // get garbage collected!
             })
           })
         })
-
       })
 
       // counter used to keep track of stats worth logging
@@ -168,17 +167,18 @@ const syncEvents = (throttle) => {
           OLD = 0
         }
 
-        ck[contract].getPastEvents(name, { fromBlock: i-6, toBlock: i }, (err, pastEvents) => {
-          if (err) { console.error(err); process.exit(1) }
+        ck[contract].getPastEvents(name, { fromBlock: i, toBlock: i }).then(pastEvents => {
           OLD += pastEvents.length
-          pastEvents.forEach(event=>{
-            saveEvent(contract, name, event).then(()=>{ event = null }) // get garbage collected!
-          })
+          pastEvents.forEach(event=>{ saveEvent(contract, name, event) })
 
           // give node a sec to clear the call stack & give ethprovider a sec to stay synced
           setTimeout(()=>{
-            remember(i-5, contract, name)
+            pastEvents = null // get garbage collected!
+            remember(i, contract, name)
           }, throttle)
+        }).catch(err=>{
+          console.error(err)
+          process.exit(1)
         })
       }
       remember(fromBlock, contract, name)
