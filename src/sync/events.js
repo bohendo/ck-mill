@@ -174,7 +174,7 @@ const syncEvents = (throttle) => {
           // give node a sec to clear the call stack & give ethprovider a sec to stay synced
           setTimeout(()=>{
             pastEvents = null // get garbage collected!
-            remember(i, contract, name)
+            remember(i-1, contract, name)
           }, throttle)
         }).catch(err=>{
           console.error(err)
