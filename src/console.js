@@ -4,7 +4,7 @@ import db from './db'
 import { breed } from './util/breed'
 import { ls } from './util/ls'
 
-import { autobirth } from './eth/autobirther'
+import { Autobirther, autobirth } from './eth/autobirther'
 
 console.log('ckmill console is loaded!')
 
@@ -103,6 +103,6 @@ const log = (a,b,c,d,e) => {
 
 const from = (f) => { return ({ fromBlock: f, toBlock: f }) }
 
-const ck = { web3, db, core, sale, sire, breed, ls, bg0, bg1, bg2, from, log, autobirth }
+const ck = { web3, db, core, sale, sire, breed, ls, bg0, bg1, bg2, from, log, autobirth, Autobirther }
 
 export default ck

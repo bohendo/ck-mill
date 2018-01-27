@@ -5,12 +5,13 @@ import AutobirtherData from '../../build/contracts/Autobirther'
 
 import fs from 'fs'
 
-const Autobirther = new web3.eth.Contract(AutobirtherData.abi, "0xF73DE4309DdB425Ee9B7E699ae34210a4dc2dc96")
+// const Autobirther = AutobirtherData
+const Autobirther = new web3.eth.Contract(AutobirtherData.abi, "0x88ef31d4a13d674bdc00ea367e36bab6d43648d6")
 
 // lokids for List Of Kitty IDS
 const autobirth = (lokids) => {
 
-  var gasPrice = "10000000000"
+  var gasPrice = "20000000000"
   var block
   var addr
 
@@ -42,16 +43,20 @@ const autobirth = (lokids) => {
       })
       .on('receipt', (receipt) => {
 
+        let nBirths = 0
+        if (receipt.events["1"]) nBirths += 1 
+        if (receipt.events["3"]) nBirths += 1 
+        if (receipt.events["5"]) nBirths += 1 
+
         // log confirmed transaction
         console.log(`${new Date().toISOString()} Conf tx ${receipt.transactionHash}
-                         on block ${receipt.blockNumber}. Spent ${Math.round(Number(receipt.gasUsed)*Number(gasPrice)/1000000000000)} uETH to birth: ${JSON.stringify(receipt.events)}`)
+                         on block ${receipt.blockNumber}. Spent ${Math.round(Number(receipt.gasUsed)*Number(gasPrice)/1000000000000)} uETH to birth ${Math.round(nBirths)} kitties`)
 
       })
 
     }
   })
 
-
 }
 
-export { autobirth }
+export { Autobirther, autobirth }

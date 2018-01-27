@@ -179,7 +179,12 @@ const listen = () => {
   web3.eth.subscribe('newBlockHeaders', (err, header) => {
     if (err) { console.error(err); process.exit(1) }
     const block = Number(header.number)
-    console.log(`${new Date().toISOString()} --- Imported new block ${block}`)
+
+    web3.eth.getAccounts().then(accounts => {
+      web3.eth.getBalance(accounts[0]).then(balance => {
+        console.log(`${new Date().toISOString()} --- Imported new block ${block}  (Current Balance: ${Math.round(Number(balance)/1000000000000)} uETH)`)
+      })
+    })
 
     // ethprovider's buggy & occasionally skips events and imported blocks
     // get events from several of the most recent blocks to partially solve this problem
@@ -209,7 +214,7 @@ const listen = () => {
 
 
             // SEND GIVEBIRTH TRANSACTION?
-            if (DUEDATES[0].blockn === block+2 || DUEDATES[0].blockn === block+3) {
+            if (DUEDATES[0].blockn === block+2 || DUEDATES[1].blockn === block+2 || DUEDATES[2].blockn === block+2) {
 
               let i = 0
               const toBirth = []
