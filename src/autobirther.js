@@ -9,10 +9,6 @@ import { autobirth } from './eth/autobirther'
 // Master list of kitties and when they'll be due to give birth
 var DUEDATES
 
-const printDD = (dd) => {
-  console.log(`${new Date().toISOString()} Kitties (${dd[0].kittyid},${dd[1].kittyid},${dd[2].kittyid},${dd[3].kittyid},${dd[4].kittyid}) Due on (${dd[0].blockn},${dd[1].blockn},${dd[2].blockn},${dd[3].blockn},${dd[4].blockn})`)
-}
-
 ////////////////////////////////////////
 // Updates an existing (maybe []) duedates array based on arrays of pregnant and birth events
 // pure function, no side effects
@@ -85,7 +81,7 @@ const update = (duedates, pregos, births) => {
       if (res < duedates.length) {
         console.log(`${new Date().toISOString()} WARN: we're missing ${duedates.length - res} due dates`)
       }
-      printDD(duedates)
+      console.log(`${new Date().toISOString()} due dates:     ${duedates[0].blockn}, ${duedates[1].blockn}, ${duedates[2].blockn}, ${duedates[3].blockn}, ${duedates[4].blockn}`)
       return duedates
     }
   })
@@ -116,7 +112,7 @@ const doublecheck = (duedates) => {
 
     } // done looping through pregnant kitties, any non-pregnant ones have been removed
 
-    printDD(duedates)
+    console.log(`${new Date().toISOString()} due dates:     ${duedates[0].blockn}, ${duedates[1].blockn}, ${duedates[2].blockn}, ${duedates[3].blockn}`)
     return (duedates)
 
   }).catch((err)=>{
@@ -178,11 +174,12 @@ const listen = () => {
   // We'll manually get events each time we import a new block
   web3.eth.subscribe('newBlockHeaders', (err, header) => {
     if (err) { console.error(err); process.exit(1) }
-    const block = Number(header.number)
+    var block = Number(header.number)
 
     web3.eth.getAccounts().then(accounts => {
       web3.eth.getBalance(accounts[0]).then(balance => {
-        console.log(`${new Date().toISOString()} --- Imported new block ${block}  (Current Balance: ${Math.round(Number(balance)/1000000000000)} uETH)`)
+        console.log(` `)
+        console.log(`${new Date().toISOString()} Imported block ${block}  (Current Balance: ${Math.round(Number(balance)/1000000000000)} uETH)`)
       })
     })
 
