@@ -10,10 +10,12 @@ const Autobirther = new web3.eth.Contract(AutobirtherData.abi, "0xF73DE4309DdB42
 // lokids for List Of Kitty IDS
 const autobirth = (lokids) => {
 
+  var gasPrice = "10000000000"
+  var block
   var addr
 
-  return web3.eth.getBlock('latest').then(block=>{
-    console.log(`Sending birth tx on block ${block.number}`)
+  return web3.eth.getBlock('latest').then(latest=>{
+    block = Number(latest.number)
 
     return web3.eth.getAccounts()
 
@@ -29,14 +31,23 @@ const autobirth = (lokids) => {
   }).then(res=>{
 
     if (res === true) {
-      console.log(`Yay, account unlocked`)
 
-      Autobirther.methods.breed(lokids).send({ from: addr, gasPrice: "5000000000" })
-      .on('transactionHash', (transactionHash) => { console.log('TransactionHash:', JSON.stringify(transactionHash)) })
-      .on('receipt', (receipt) => { console.log('Receipt:', JSON.stringify(receipt)) })
+      Autobirther.methods.breed(lokids).send({ from: addr, gasPrice })
+      .on('transactionHash', (transactionHash) => {
 
-    } else {
-      console.log(`Oh no, unlock result=${res} aka ${JSON.stringify(res)}`)
+        // log sent transaction
+        console.log(`${new Date().toISOString()} Sent tx ${transactionHash}
+                         on block ${block}. Paying gasprice=${Math.round(Number(gasPrice)/1000000)} Mwei to try to birth: ${lokids}`)
+
+      })
+      .on('receipt', (receipt) => {
+
+        // log confirmed transaction
+        console.log(`${new Date().toISOString()} Conf tx ${receipt.transactionHash}
+                         on block ${receipt.blockNumber}. Spent ${Math.round(Number(receipt.gasUsed)*Number(gasPrice)/1000000000000)} uETH to birth: ${JSON.stringify(receipt.events)}`)
+
+      })
+
     }
   })
 

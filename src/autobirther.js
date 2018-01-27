@@ -10,8 +10,7 @@ import { autobirth } from './eth/autobirther'
 var DUEDATES
 
 const printDD = (dd) => {
-  console.log(`${new Date().toISOString()} Kitties (${dd[0].kittyid},${dd[1].kittyid},${dd[2].kittyid},${dd[3].kittyid},${dd[4].kittyid})
-                         Due on (${dd[0].blockn},${dd[1].blockn},${dd[2].blockn},${dd[3].blockn},${dd[4].blockn})`)
+  console.log(`${new Date().toISOString()} Kitties (${dd[0].kittyid},${dd[1].kittyid},${dd[2].kittyid},${dd[3].kittyid},${dd[4].kittyid}) Due on (${dd[0].blockn},${dd[1].blockn},${dd[2].blockn},${dd[3].blockn},${dd[4].blockn})`)
 }
 
 ////////////////////////////////////////
@@ -207,6 +206,23 @@ const listen = () => {
           // Update our global DUEDATES variable.
           update(DUEDATES, pregos, births).then(result => {
             DUEDATES = result
+
+
+            // SEND GIVEBIRTH TRANSACTION?
+            if (DUEDATES[0].blockn === block+2 || DUEDATES[0].blockn === block+3) {
+
+              let i = 0
+              const toBirth = []
+
+              while (DUEDATES[i].blockn < block+5) {
+                toBirth.push(DUEDATES[i].kittyid)
+                i += 1
+              }
+
+              autobirth(toBirth) // Send Transaction
+
+            }
+
           })
       })
     })
