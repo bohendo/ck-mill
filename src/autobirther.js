@@ -1,12 +1,18 @@
 import { web3, core, sale, sire } from './eth/web3'
 import db from './db/'
 
+import { autobirth } from './eth/autobirther'
+
 ////////////////////////////////////////
 // Global Variables
 
-
 // Master list of kitties and when they'll be due to give birth
 var DUEDATES
+
+const printDD = (dd) => {
+  console.log(`${new Date().toISOString()} Kitties (${dd[0].kittyid},${dd[1].kittyid},${dd[2].kittyid},${dd[3].kittyid},${dd[4].kittyid})
+                         Due on (${dd[0].blockn},${dd[1].blockn},${dd[2].blockn},${dd[3].blockn},${dd[4].blockn})`)
+}
 
 ////////////////////////////////////////
 // Updates an existing (maybe []) duedates array based on arrays of pregnant and birth events
@@ -22,7 +28,7 @@ var DUEDATES
 //   if kitty123 is pregnant and due on block 464
 const update = (duedates, pregos, births) => {
 
-  console.log(`${new Date().toISOString()} Updating list of ${duedates.length} duedates according to ${births.length} birth events and ${pregos.length} pregnant events`)
+  // console.log(`${new Date().toISOString()} Updating list of ${duedates.length} duedates according to ${births.length} birth events and ${pregos.length} pregnant events`)
 
   pregos.forEach(preg=>{ // for each pregnancy event
 
@@ -80,7 +86,7 @@ const update = (duedates, pregos, births) => {
       if (res < duedates.length) {
         console.log(`${new Date().toISOString()} WARN: we're missing ${duedates.length - res} due dates`)
       }
-      console.log(`${new Date().toISOString()} ${JSON.stringify(duedates.slice(0,3))}`)
+      printDD(duedates)
       return duedates
     }
   })
@@ -111,10 +117,13 @@ const doublecheck = (duedates) => {
 
     } // done looping through pregnant kitties, any non-pregnant ones have been removed
 
-    console.log(`${new Date().toISOString()} ${JSON.stringify(duedates.slice(0,3))}`)
+    printDD(duedates)
     return (duedates)
 
-  }).catch((err)=>{ console.error(err) }))
+  }).catch((err)=>{
+    console.error(err)
+    return (duedates) // return what we have so far
+  }))
 
 }
 

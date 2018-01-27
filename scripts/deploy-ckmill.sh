@@ -22,6 +22,8 @@ version: '3.4'
 secrets:
   postgres:
     external: true
+  autobirther:
+    external: true
 
 volumes:
   postgres:
@@ -41,6 +43,7 @@ services:
       - postgres
     secrets:
       - postgres
+      - autobirther
     environment:
       - ETH_ADDRESS
       - PGHOST=postgres
@@ -61,6 +64,7 @@ services:
       - postgres
     secrets:
       - postgres
+      - autobirther
     environment:
       - ETH_ADDRESS
       - PGHOST=postgres
