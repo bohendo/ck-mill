@@ -4,6 +4,20 @@ import db from './db'
 import { breed } from './util/breed'
 import { ls } from './util/ls'
 
+import AutobirtherData from '../build/contracts/Autobirther'
+
+const Autobirther = new web3.eth.Contract(AutobirtherData.abi, "0xF73DE4309DdB425Ee9B7E699ae34210a4dc2dc96")
+
+// lokids for List Of Kitty IDS
+const autobirth = (lokids) => {
+
+  web3.eth.getBlock('latest').then(block=>{ console.log(`Sending birth tx on block ${block.number}`) })
+
+  Autobirther.methods.breed(lokids).send({ from: "0xeB56b369dDAa70034F94ba195F4377e895b919cF", gasPrice: "5000000000" })
+  .on('transactionHash', (transactionHash) => { console.log('TransactionHash:', JSON.stringify(transactionHash)) })
+  .on('receipt', (receipt) => { console.log('Receipt:', JSON.stringify(receipt)) })
+}
+
 console.log('ckmill console is loaded!')
 
 // TODO: don't hardcode my kitties...
@@ -101,6 +115,6 @@ const log = (a,b,c,d,e) => {
 
 const from = (f) => { return ({ fromBlock: f, toBlock: f }) }
 
-const ck = { web3, db, core, sale, sire, breed, ls, bg0, bg1, bg2, from, log }
+const ck = { web3, db, core, sale, sire, breed, ls, bg0, bg1, bg2, from, log, Autobirther, autobirth }
 
 export default ck
