@@ -4,7 +4,32 @@ import db from './db'
 import { breed } from './util/breed'
 import { ls } from './util/ls'
 
-import { Autobirther, autobirth } from './eth/autobirther'
+import { Autobirther, AutobirtherData, autobirth } from './eth/autobirther'
+
+const deployAutobirther = () => {
+  const newAutobirther = new web3.eth.Contract(AutobirtherData.abi)
+  web3.eth.getAccounts().then(accounts=>{
+
+    newAutobirther.deploy({
+      data: AutobirtherData.bytecode,
+      arguments: []
+
+    }).send({
+      from: accounts[0]
+
+    }).on('transactionHash', txhash => {
+      console.log(`Deploying contract with tx: ${txhash}`)
+
+    }).then(address=>{
+      console.log(`Contract deployed to address: ${JSON.stringify(address)}`)
+
+    }).catch(error => {
+      console.log(`Please manually unlock the default account ${accounts[0].substring(0,8)}.. to deploy`)
+
+    })
+
+  })
+}
 
 console.log('ckmill console is loaded!')
 
@@ -103,6 +128,6 @@ const log = (a,b,c,d,e) => {
 
 const from = (f) => { return ({ fromBlock: f, toBlock: f }) }
 
-const ck = { web3, db, core, sale, sire, breed, ls, bg0, bg1, bg2, from, log, autobirth, Autobirther }
+const ck = { web3, db, core, sale, sire, breed, ls, bg0, bg1, bg2, from, log, autobirth, Autobirther, deployAutobirther }
 
 export default ck

@@ -42,9 +42,13 @@ sync: sync-image
 	touch build/sync
 
 # deploy autobirther
-autobirther: autobirther-image
+autobirther: autobirther-image contract
 	docker push $(me)/ckmill_autobirther:$v
 	touch build/autobirther
+
+contract: contracts/Autobirther.sol
+	truffle compile
+	touch build/contract
 
 build/console-image: console.Dockerfile console.bundle.js
 	docker build -f ops/console.Dockerfile -t $(me)/ckmill_console:$v -t ckmill_console:$v .
