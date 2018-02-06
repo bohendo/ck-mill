@@ -3,24 +3,22 @@ import db from './db/'
 
 import { autobirth } from './eth/autobirther'
 
-////////////////////////////////////////
-// Global Variables
+// TODO: blocklock to pause new block import handlers until the previous one finishes
+// TODO: we are not eliminating expired due dates properly
 
-// Master list of kitties and when they'll be due to give birth
-var DUEDATES
 
 ////////////////////////////////////////
-// Updates an existing (maybe []) duedates array based on arrays of pregnant and birth events
+// Updates an existing (maybe empty) duedates array based on arrays of pregnant and birth events
 // pure function, no side effects
 // (duedates, pregos, births) => duedates
 // where
-// - pregos[i] = { matronid: 123, blockn: 460, cooldownend: 464, ... }
-//   if we got a pregnant event for kitty 123 at block 460
-//   and it'll be ready to give birth at block 464
-// - births[i] = { kittyid: 12345, blockn: 46400, ... }
-//   if we got a birth event for kitty 12345 at block 46400
+// - pregos[i] = { matronid: 123, blockn: 460, cooldownend: 464 }
+//   if we got a pregnant event for kitty 123 at block 460 and it'll be ready to give birth at block 464
+// - births[i] = { kittyid: 456, blockn: 457 }
+//   if we got a birth event for kitty 456 at block 457
 // - duedates[i] = { kittyid: 123, blockn: 464 }
-//   if kitty123 is pregnant and due on block 464
+//   if kitty 123 is still pregnant and will be due on block 464
+//   there should only be one due date per kittyid
 const update = (duedates, pregos, births) => {
 
   // console.log(`${new Date().toISOString()} Updating list of ${duedates.length} duedates according to ${births.length} birth events and ${pregos.length} pregnant events`)
@@ -39,9 +37,10 @@ const update = (duedates, pregos, births) => {
        // does this matronid already have an entry in duedates?
       if (matronid === duedates[i].kittyid){
         isNew = false
-        // if this one more recent, overwrite the old one
+        // if this one is more recent, overwrite the old one
         if (cooldownend > duedates[i].blockn) {
           duedates[i].kittyid = cooldownend
+          break // there should only be one due date per kittyid
         }
       }
     }
@@ -63,12 +62,12 @@ const update = (duedates, pregos, births) => {
       // remove any duedates that were before this kitty's most recent birth
       if (matronid === duedates[i].kittyid && block >= duedates[i].blockn) {
         duedates.splice(i, 1)
-        i -= 1 // We removed an element from the list so this i now points to the next element
+        break // there should only be one due date per kittyid
       }
     }
   })
 
-  // Sort due dates so that most recent is on top
+  // Sort due dates so that more recent ones are first
   duedates.sort((a,b) => { return a.blockn-b.blockn })
 
   // double check everything if we have too many due dates on our calendar
@@ -76,10 +75,13 @@ const update = (duedates, pregos, births) => {
     // too many due dates? double check what we got
     if (res < duedates.length) {
       console.log(`${new Date().toISOString()} WARN: we have too many duedates, double checking with the blockchain...`)
-      return doublecheck(duedates)
+      return doublecheck(duedates).then(dds => {
+        console.log(`${new Date().toISOString()} due dates:     ${dds[0].blockn}, ${dds[1].blockn}, ${dds[2].blockn}, ${dds[3].blockn}`)
+        return dds
+      })
     } else {
-      if (res < duedates.length) {
-        console.log(`${new Date().toISOString()} WARN: we're missing ${duedates.length - res} due dates`)
+      if (res > duedates.length) {
+        console.log(`${new Date().toISOString()} WARN: we're missing ${res - duedates.length} due dates`)
       }
       console.log(`${new Date().toISOString()} due dates:     ${duedates[0].blockn}, ${duedates[1].blockn}, ${duedates[2].blockn}, ${duedates[3].blockn}, ${duedates[4].blockn}`)
       return duedates
@@ -89,10 +91,15 @@ const update = (duedates, pregos, births) => {
 
 ////////////////////////////////////////
 // Double check each due date & remove any that expired w/out us noticing
+// (duedates) => duedates
+// pure function, no side effects
 const doublecheck = (duedates) => {
 
+  // create a copy to remove items from
+  output = duedates.slice(0)
+
   // loop through the kitties we found and get the status of each
-  const kittyPromises = duedates.map(dd => core.methods.getKitty(dd.kittyid).call())
+  const kittyPromises = output.map(dd => core.methods.getKitty(dd.kittyid).call())
 
   // wait for all our kitty data to return
   return (Promise.all(kittyPromises).then(kitties=>{
@@ -102,22 +109,22 @@ const doublecheck = (duedates) => {
 
       // if this kitty isn't pregnant...
       if (!kitties[i].isGestating) {
-        console.log(`${new Date().toISOString()} WARN: we thought kitty ${duedates[i].kittyid} was pregnant but isGestating=${kitties[i].isGestating}, removing...`)
+        console.log(`${new Date().toISOString()} WARN: we thought kitty ${output[i].kittyid} was pregnant it's not, removing...`)
 
         // remove this index from both arrays
-        duedates.splice(i, 1)
+        output.splice(i, 1)
         kitties.splice(i, 1)
         i -= 1 // We removed an element from the list so the same index now points to the next element
       }
 
     } // done looping through pregnant kitties, any non-pregnant ones have been removed
 
-    console.log(`${new Date().toISOString()} due dates:     ${duedates[0].blockn}, ${duedates[1].blockn}, ${duedates[2].blockn}, ${duedates[3].blockn}`)
-    return (duedates)
+    return (output)
 
   }).catch((err)=>{
     console.error(err)
-    return (duedates) // return what we have so far
+    // if we can't verify pregnancies then don't spend money trying to give birth
+    process.exit(1)
   }))
 
 }
@@ -126,7 +133,8 @@ const doublecheck = (duedates) => {
 ////////////////////////////////////////
 // Pulls old events out of our database and calls update()
 // to populate our duedates calendar
-const init = (listen) => {
+// once our duedates calendar is initialized, it'll call it's callback
+const init = (callback) => {
   web3.eth.getBlock('latest').then(res=>{
 
     const latest = Number(res.number)
@@ -142,22 +150,20 @@ const init = (listen) => {
       WHERE blockn > ${latest-week}
       ORDER BY blockn DESC;`
 
-    // get only the most recent birth for each kitty this week
+    // get all birth events from the last week with most recent first
     const birth_query = `
-      SELECT DISTINCT ON (matronid) matronid,blockn
+      SELECT matronid,blockn
       FROM birth
       WHERE blockn > ${latest-week}
-      ORDER BY matronid DESC, blockn DESC;`
+      ORDER BY blockn DESC;`
 
     db.query(preg_query).then(pregos => {
       db.query(birth_query).then(births => {
 
         // update empty erray w historic birth/pregnancy events
         update([], pregos.rows, births.rows).then(duedates=>{
-          // save result to our global variable
-          DUEDATES = duedates
-          listen()
-        })
+          callback(duedates)
+        }).catch((error) => { console.error(`Failed to update based on pregnancies ${JSON.stringify(pregos.rows)} and births ${JSON.stringify(births.rows)}`, error); process.exit(1) })
 
       }).catch((error) => { console.error(birth_query, error); process.exit(1) })
     }).catch((error) => { console.error(preg_query, error); process.exit(1) })
@@ -168,8 +174,12 @@ const init = (listen) => {
 
 ////////////////////////////////////////
 // Listens for new events and calls updateDueDates()
-// to keep our DUEDATES calendar up-to-date
-const listen = () => {
+// to keep our calendar up-to-date
+const listen = (initialDDs) => {
+
+  // shared between the two watcher functions below
+  // this copy will be updated as our watchers watch
+  var duedates = initialDDs
 
   // We'll manually get events each time we import a new block
   web3.eth.subscribe('newBlockHeaders', (err, header) => {
@@ -184,51 +194,50 @@ const listen = () => {
     })
 
     // ethprovider's buggy & occasionally skips events and imported blocks
-    // get events from several of the most recent blocks to partially solve this problem
-    core.getPastEvents('Birth', { fromBlock: block-2, toBlock: block }, (err, pastBirths) => {
+    // get events from several of the most recent blocks to protect against this
+    core.getPastEvents('Birth', { fromBlock: block-4, toBlock: block }, (err, pastBirths) => {
       if (err) { console.error(err); process.exit(1) }
-      core.getPastEvents('Pregnant', { fromBlock: block-2, toBlock: block }, (err, pastPregos) => {
+      core.getPastEvents('Pregnant', { fromBlock: block-4, toBlock: block }, (err, pastPregos) => {
         if (err) { console.error(err); process.exit(1) }
 
-          const births = pastBirths.map(e=>{
-            return ({
-              matronid: Number(e.returnValues[2]),
-              blockn: Number(e.blockNumber),
-            })
+        // convert events to a form that update() understands
+        const births = pastBirths.map(e=>{
+          return ({
+            matronid: Number(e.returnValues[2]),
+            blockn: Number(e.blockNumber),
           })
+        })
 
-          const pregos = pastPregos.map(e=>{
-            return ({
-              matronid: Number(e.returnValues[1]),
-              blockn: Number(e.blockNumber),
-              cooldownend: Number(e.returnValues[3]),
-            })
+        const pregos = pastPregos.map(e=>{
+          return ({
+            matronid: Number(e.returnValues[1]),
+            blockn: Number(e.blockNumber),
+            cooldownend: Number(e.returnValues[3]),
           })
+        })
 
-          // Update our global DUEDATES variable.
-          update(DUEDATES, pregos, births).then(result => {
-            DUEDATES = result
+        // Update our duedates variable.
+        update(duedates, pregos, births).then(result => {
+          duedates = result
 
 
-            // SEND GIVEBIRTH TRANSACTION?
-            if (DUEDATES[0].blockn === block+2 || DUEDATES[1].blockn === block+2 || DUEDATES[2].blockn === block+2) {
+          // should we send an autobirther transaction?!
+          let shouldSend = false
+          for (let i=0; i<duedates.length; i++) { if (duedates[i].blockn === block+2) shouldSend = true }
 
-              let i = 0
-              const toBirth = []
-
-              while (DUEDATES[i].blockn < block+5) {
-                toBirth.push(DUEDATES[i].kittyid)
-                i += 1
-              }
-
-              autobirth(toBirth) // Send Transaction
-
+          if (shouldSend) {
+            const toBirth = []
+            let i = 0
+            while (duedates[i].blockn < block+5) {
+              toBirth.push(duedates[i])
+              i += 1
             }
+            autobirth(toBirth) // Call function that will send our transaction
+          }
 
-          })
+        })
       })
     })
-
   })
 }
 
