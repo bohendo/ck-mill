@@ -42,7 +42,7 @@ sync: sync-image
 	touch build/sync
 
 # deploy autobirther
-autobirther: autobirther-image contract
+autobirther: contract autobirther-image
 	docker push $(me)/ckmill_autobirther:$v
 	touch build/autobirther
 
