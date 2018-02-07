@@ -72,18 +72,25 @@ const update = (duedates, pregos, births) => {
 
   // double check everything if we have too many due dates on our calendar
   return core.methods.pregnantKitties().call().then(res=>{
+
+    const panic = () => {
+      console.log(`${new Date().toISOString()} Error: Our due date info is dangerously out of date, exiting...`)
+      process.exit(1)
+    }
+
     // too many due dates? double check what we got
     if (res < duedates.length) {
       console.log(`${new Date().toISOString()} WARN: we have too many duedates, double checking with the blockchain...`)
       return doublecheck(duedates).then(dds => {
-        console.log(`${new Date().toISOString()} due dates:     ${dds[0].blockn}, ${dds[1].blockn}, ${dds[2].blockn}, ${dds[3].blockn}`)
-        return dds
+        // oh no, are we still missing prego events
+        return (res > dds.length) ? panic() : dds
       })
+
+    // oh no, we're missing prego events
+    } else if (res > duedates.length) {
+      panic()
+
     } else {
-      if (res > duedates.length) {
-        console.log(`${new Date().toISOString()} WARN: we're missing ${res - duedates.length} due dates`)
-      }
-      console.log(`${new Date().toISOString()} due dates:     ${duedates[0].blockn}, ${duedates[1].blockn}, ${duedates[2].blockn}, ${duedates[3].blockn}, ${duedates[4].blockn}`)
       return duedates
     }
   })
@@ -162,6 +169,7 @@ const init = (callback) => {
 
         // update empty erray w historic birth/pregnancy events
         update([], pregos.rows, births.rows).then(duedates=>{
+          console.log(`${new Date().toISOString()} initial due dates: ${duedates[0].blockn}, ${duedates[1].blockn}, ${duedates[2].blockn}`)
           callback(duedates)
         }).catch((error) => { console.error(`Failed to update based on ${pregos.rows.length} pregnancies and ${births.rows.length} births:`, error); process.exit(1) })
 
@@ -176,6 +184,7 @@ const init = (callback) => {
 // Listens for new events and calls updateDueDates()
 // to keep our calendar up-to-date
 const listen = (initialDDs) => {
+
 
   // shared between the two watcher functions below
   // this copy will be updated as our watchers watch
@@ -216,9 +225,11 @@ const listen = (initialDDs) => {
           })
         })
 
-        // Update our duedates variable.
+        // Update our shared duedates variable.
         update(duedates, pregos, births).then(result => {
+
           duedates = result
+          console.log(`${new Date().toISOString()} due dates:     ${duedates[0].blockn}, ${duedates[1].blockn}, ${duedates[2].blockn}`)
 
 
           // should we send an autobirther transaction?!
