@@ -14,11 +14,11 @@ import { autobirth } from './eth/autobirther'
 // where
 // - pregos[i] = { matronid: 123, blockn: 460, cooldownend: 464 }
 //   if we got a pregnant event for kitty 123 at block 460 and it'll be ready to give birth at block 464
-// - births[i] = { kittyid: 456, blockn: 457 }
+// - births[i] = { matronid: 456, blockn: 457 }
 //   if we got a birth event for kitty 456 at block 457
-// - duedates[i] = { kittyid: 123, blockn: 464 }
+// - duedates[i] = { matronid: 123, blockn: 464 }
 //   if kitty 123 is still pregnant and will be due on block 464
-//   there should only be one due date per kittyid
+//   there should only be one due date per matronid
 const update = (duedates, pregos, births) => {
 
   // console.log(`${new Date().toISOString()} Updating list of ${duedates.length} duedates according to ${births.length} birth events and ${pregos.length} pregnant events`)
@@ -35,19 +35,19 @@ const update = (duedates, pregos, births) => {
     for (let i=0; i<duedates.length; i++) {
 
        // does this matronid already have an entry in duedates?
-      if (matronid === duedates[i].kittyid){
+      if (matronid === duedates[i].matronid){
         isNew = false
         // if this one is more recent, overwrite the old one
         if (cooldownend > duedates[i].blockn) {
-          duedates[i].kittyid = cooldownend
-          break // there should only be one due date per kittyid
+          duedates[i].matronid = cooldownend
+          break // there should only be one due date per matronid
         }
       }
     }
 
     // if this kitty doesn't have an entry in duedates yet, add one
     if (isNew) {
-      duedates.push({ kittyid: matronid, blockn: cooldownend })
+      duedates.push({ matronid: matronid, blockn: cooldownend })
     }
   })
 
@@ -60,9 +60,9 @@ const update = (duedates, pregos, births) => {
     // search through existing due dates
     for (let i=0; i<duedates.length; i++) {
       // remove any duedates that were before this kitty's most recent birth
-      if (matronid === duedates[i].kittyid && block >= duedates[i].blockn) {
+      if (matronid === duedates[i].matronid && block >= duedates[i].blockn) {
         duedates.splice(i, 1)
-        break // there should only be one due date per kittyid
+        break // there should only be one due date per matronid
       }
     }
   })
@@ -96,10 +96,10 @@ const update = (duedates, pregos, births) => {
 const doublecheck = (duedates) => {
 
   // create a copy to remove items from
-  output = duedates.slice(0)
+  var output = duedates.slice(0)
 
   // loop through the kitties we found and get the status of each
-  const kittyPromises = output.map(dd => core.methods.getKitty(dd.kittyid).call())
+  const kittyPromises = output.map(dd => core.methods.getKitty(dd.matronid).call())
 
   // wait for all our kitty data to return
   return (Promise.all(kittyPromises).then(kitties=>{
@@ -109,7 +109,7 @@ const doublecheck = (duedates) => {
 
       // if this kitty isn't pregnant...
       if (!kitties[i].isGestating) {
-        console.log(`${new Date().toISOString()} WARN: we thought kitty ${output[i].kittyid} was pregnant it's not, removing...`)
+        console.log(`${new Date().toISOString()} WARN: we thought kitty ${output[i].matronid} was pregnant it's not, removing...`)
 
         // remove this index from both arrays
         output.splice(i, 1)
@@ -163,7 +163,7 @@ const init = (callback) => {
         // update empty erray w historic birth/pregnancy events
         update([], pregos.rows, births.rows).then(duedates=>{
           callback(duedates)
-        }).catch((error) => { console.error(`Failed to update based on pregnancies ${JSON.stringify(pregos.rows)} and births ${JSON.stringify(births.rows)}`, error); process.exit(1) })
+        }).catch((error) => { console.error(`Failed to update based on ${pregos.rows.length} pregnancies and ${births.rows.length} births:`, error); process.exit(1) })
 
       }).catch((error) => { console.error(birth_query, error); process.exit(1) })
     }).catch((error) => { console.error(preg_query, error); process.exit(1) })

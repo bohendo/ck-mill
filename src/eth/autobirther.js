@@ -1,12 +1,5 @@
-
-import { web3 } from './web3'
-
-import AutobirtherData from '../../build/contracts/Autobirther'
-
 import fs from 'fs'
-
-// const Autobirther = AutobirtherData
-const Autobirther = new web3.eth.Contract(AutobirtherData.abi, "0xbed6b644203881aae28072620433524a66a37b87")
+import { web3, Autobirther } from './web3'
 
 const unlock = () => {
   return web3.eth.getAccounts().then(accounts=>{

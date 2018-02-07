@@ -1,20 +1,24 @@
-////////////////////////////////////////
-// 3rd Party Imports
 import net from 'net'
 import Web3 from 'web3'
 
-// My Imports
-import { CORE, SALE, SIRE } from './ck/'
+// cryptokitty contracts from etherscan
+import { CoreData, SaleData, SireData } from './ck/'
 
+// my autobirther contracts from truffle artifacts
+import AutobirtherData from '../../build/contracts/Autobirther'
+
+// connect to eth provider
 const web3 = new Web3(new Web3.providers.IpcProvider(
-  '/tmp/ipc/eth.ipc',
+  '/tmp/ipc/geth.ipc',
   new net.Socket()
 ))
 
-const defaultFrom = (process.env.ETH_ADDRESS) ? { from: process.env.ETH_ADDRESS } : {}
+// initialize cryptokitty contract instances
+const core = new web3.eth.Contract(CoreData.abi, CoreData.addr)
+const sale = new web3.eth.Contract(SaleData.abi, SaleData.addr)
+const sire = new web3.eth.Contract(SireData.abi, SireData.addr)
 
-const core = new web3.eth.Contract(CORE.abi, CORE.addr, defaultFrom)
-const sale = new web3.eth.Contract(SALE.abi, SALE.addr, defaultFrom)
-const sire = new web3.eth.Contract(SIRE.abi, SIRE.addr, defaultFrom)
+// initialize our contract instance
+const Autobirther = new web3.eth.Contract(AutobirtherData.abi, "0xbed6b644203881aae28072620433524a66a37b87")
 
-export { web3, core, sale, sire }
+export { web3, core, sale, sire, Autobirther }
