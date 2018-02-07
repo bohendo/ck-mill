@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# edit this to deploy with geth or parity
+ethprovider=parity
+
 # if postgres docker secret doesn't exist, create it
 if [[ "`docker secret ls --filter "name=postgres" | wc -l`" == "1" ]]
 then
@@ -8,12 +11,11 @@ then
   echo 'postgres secret initialized'
 fi
 
+
 syncImage="`whoami`/ckmill_sync:latest"
-autobirtherImage="`whoami`/ckmill_autobirther:latest"
 consoleImage="`whoami`/ckmill_console:latest"
 
 docker pull $syncImage
-docker pull $autobirtherImage
 docker pull $consoleImage
 
 cat -> /tmp/docker-compose.yml <<EOF
@@ -46,27 +48,7 @@ services:
       - autobirther
     environment:
       - ETH_ADDRESS
-      - PGHOST=postgres
-      - PGPORT=5432
-      - PGUSER=ckmill
-      - PGDATABASE=ckmill
-      - PGPASSFILE=/run/secrets/postgres
-    volumes:
-      - ethprovider_ipc:/tmp/ipc
-    networks:
-      - back
-
-  autobirther:
-    image: $autobirtherImage
-    deploy:
-      mode: global
-    depends_on:
-      - postgres
-    secrets:
-      - postgres
-      - autobirther
-    environment:
-      - ETH_ADDRESS
+      - ETHPROVIDER_IPC=/tmp/ipc/$ethprovider.ipc
       - PGHOST=postgres
       - PGPORT=5432
       - PGUSER=ckmill
@@ -87,6 +69,7 @@ services:
       - postgres
     environment:
       - ETH_ADDRESS
+      - ETHPROVIDER_IPC=/tmp/ipc/$ethprovider.ipc
       - PGHOST=postgres
       - PGPORT=5432
       - PGUSER=ckmill

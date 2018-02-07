@@ -9,7 +9,7 @@ import AutobirtherData from '../../build/contracts/Autobirther'
 
 // connect to eth provider
 const web3 = new Web3(new Web3.providers.IpcProvider(
-  '/tmp/ipc/geth.ipc',
+  process.env.ETHPROVIDER_IPC,
   new net.Socket()
 ))
 

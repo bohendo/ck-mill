@@ -80,4 +80,4 @@ const autobirth = (lodd) => {
 
 }
 
-export { Autobirther, AutobirtherData, autobirth }
+export { Autobirther, autobirth }
