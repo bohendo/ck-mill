@@ -1,5 +1,65 @@
 
-## Cryptokitties Smart-Contract Cheat-Sheet
+# Usage
+
+## Getting setup with Docker & an Ethereum Provider
+
+This project is powered by Docker. To use it, you need to have created a registry at Docker.io and have docker installed. If/when these are both complete, make sure you login by running
+
+`docker login`
+
+By default, deployment scripts use your system username as your docker.io username. There is a `me` variable in any relevant `*-build.sh` or `*-deploy.sh` script that you can change to your docker.io username if these aren't the same.
+
+First, you need to have a docker-ized ethereum provider. These are available from [my ethprovider repo](https://github.com/bohendo/ethprovider).
+
+```
+git clone https://github.com/bohendo/ethprovider
+cd ethprovider
+bash build-geth.sh && bash deploy-geth.sh
+```
+
+In general, it's not a good idea to blindly run scripts you find online. Luckily, these build/deploy scripts are very simple, about 30 and 15 lines respectively and most of this is just an embedded Dockerfile or docker-compose.yml. Edit these to tweak your docker.io username, command line options, etc
+
+## Build & Deploy ck-mill
+
+Once you have an ethprovider container running, you're ready to build & deploy ck-mill. First, grab the code:
+
+```
+git clone https://github.com/bohendo/ck-mill
+cd ck-mill
+```
+
+To deploy locally:
+
+```
+make
+bash scripts/deploy-ckmill.sh
+```
+
+To deploy to a remote server:
+
+```
+make deploy
+scp scripts/deploy-ckmill.sh remoteServer:~
+ssh remoteServer bash deploy-ckmill.sh
+```
+
+Where `remoteServer` is the hostname of some machine you have ssh access to. Make sure you've deployed an ethprovider to this machine first.
+
+If you want to autobirth, you'll need to import an account to the ethprovider serving your ck-mill. To do this, I created a dedicated autobirther account on MetaMask and imported the private key into geth using the [`personal_importRawKey` RPC method](https://github.com/ethereum/go-ethereum/wiki/Management-APIs#personal_importrawkey). It looked something like:
+
+` echo '{"jsonrpc":"2.0","method":"personal_importRawKey","params":["secretKey","secretPassword"],"id":1}' | sudo nc -U /var/lib/docker/volumes/ethprovider_ipc/_data/geth.ipc`
+
+Protip: Putting a space before the command means your secrets won't get saved to `~/.bash_history`
+
+Once your ethprovider has an account, you'll have to create a docker secret called `autobirther` to store the password.
+
+`echo "secretPassword" | tr -d '\n\r' | docker secret create autobirther -`
+
+Then you can run the following on whichever machine you want to autobirth.
+
+`bash scripts/deploy-autobirther.sh`
+
+## Cryptokitties Smart-Contract Developer Cheat-Sheet
 
 # KittyCore Contract: [0x06012c8cf97BEaD5deAe237070F9587f8E7A266d](https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#code)
 
