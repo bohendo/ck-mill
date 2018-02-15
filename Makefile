@@ -46,10 +46,6 @@ autobirther: contract autobirther-image
 	docker push $(me)/ckmill_autobirther:$v
 	touch build/autobirther
 
-contract: contracts/Autobirther.sol
-	truffle compile
-	touch build/contract
-
 build/console-image: console.Dockerfile console.bundle.js
 	docker build -f ops/console.Dockerfile -t $(me)/ckmill_console:$v -t ckmill_console:$v .
 	touch build/console-image
@@ -62,11 +58,15 @@ build/autobirther-image: autobirther.Dockerfile autobirther.bundle.js
 	docker build -f ops/autobirther.Dockerfile -t $(me)/ckmill_autobirther:$v -t ckmill_autobirther:$v .
 	touch build/autobirther-image
 
-build/console.bundle.js: node_modules webpack.console.js $(js)
+build/console.bundle.js: node_modules contract webpack.console.js $(js)
 	$(webpack) --config ops/webpack.console.js
 
-build/autobirther.bundle.js build/sync.bundle.js: node_modules webpack.daemon.js $(js)
+build/autobirther.bundle.js build/sync.bundle.js: node_modules contract webpack.daemon.js $(js)
 	$(webpack) --config ops/webpack.daemon.js
+
+contract: contracts/Autobirther.sol
+	truffle compile
+	touch build/contract
 
 node_modules: package.json
 	npm install
