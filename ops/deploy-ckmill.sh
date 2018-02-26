@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # edit this to deploy with geth or parity
-ethprovider=parity
+ethprovider=geth
 
 # if postgres docker secret doesn't exist, create it
 if [[ "`docker secret ls --filter "name=postgres" | wc -l`" == "1" ]]
@@ -47,8 +47,8 @@ services:
       - postgres
       - autobirther
     environment:
-      - ETH_ADDRESS
-      - ETHPROVIDER_IPC=/tmp/ipc/$ethprovider.ipc
+      - ETH_ADDRESS=$ETH_ADDRESS
+      - ETH_PROVIDER=/tmp/ipc/$ethprovider.ipc
       - PGHOST=postgres
       - PGPORT=5432
       - PGUSER=ckmill
@@ -68,8 +68,8 @@ services:
     secrets:
       - postgres
     environment:
-      - ETH_ADDRESS
-      - ETHPROVIDER_IPC=/tmp/ipc/$ethprovider.ipc
+      - ETH_ADDRESS=$ETH_ADDRESS
+      - ETH_PROVIDER=/tmp/ipc/$ethprovider.ipc
       - PGHOST=postgres
       - PGPORT=5432
       - PGUSER=ckmill

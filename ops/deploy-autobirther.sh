@@ -11,8 +11,8 @@ docker service create \
   --mode "global" \
   --secret "autobirther" \
   --secret "postgres" \
-  --env "ETH_ADDRESS" \
-  --env "ETHPROVIDER_IPC=/tmp/ipc/$ethprovider.ipc" \
+  --env "ETH_ADDRESS=$ETH_ADDRESS" \
+  --env "ETH_PROVIDER=/tmp/ipc/$ethprovider.ipc" \
   --network "ckmill_back" \
   --env "PGHOST=postgres" \
   --env "PGPORT=5432" \
